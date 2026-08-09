@@ -1,0 +1,112 @@
+"use client";
+
+import type { SerializedError } from "@reduxjs/toolkit";
+import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
+import { useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
+
+import { getApiErrorMessage } from "@/lib/apiError";
+import { toast } from "@/lib/toast";
+import { useCreateRazorpayOrderMutation, useVerifyPaymentMutation } from "@/store/api/paymentsApi";
+import type { Order } from "@/types";
+
+interface RazorpaySuccessResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  order_id: string;
+  name: string;
+  description?: string;
+  handler: (response: RazorpaySuccessResponse) => void;
+  theme?: { color?: string };
+  modal?: { ondismiss?: () => void };
+}
+
+interface RazorpayInstance {
+  open: () => void;
+}
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayOptions) => RazorpayInstance;
+  }
+}
+
+function toErrorMessage(error: unknown, fallback?: string) {
+  return getApiErrorMessage(error as FetchBaseQueryError | SerializedError, fallback);
+}
+
+// Shared by the checkout page (first payment attempt) and the failed-payment page (retry) —
+// retrying re-uses the SAME internal order rather than creating a new one, since the backend
+// clears the cart and decrements stock at order-creation time, not at payment time (see
+// NOTES.md) — there's nothing left in the cart to rebuild a second order from, and there
+// shouldn't be a duplicate order for the same purchase attempt either way.
+export function useRazorpayCheckout() {
+  const [createRazorpayOrder] = useCreateRazorpayOrderMutation();
+  const [verifyPayment] = useVerifyPaymentMutation();
+  const router = useRouter();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const payForOrder = useCallback(
+    async (order: Order) => {
+      setIsProcessing(true);
+      try {
+        const paymentOrder = await createRazorpayOrder({ orderId: order._id }).unwrap();
+
+        if (typeof window === "undefined" || !window.Razorpay) {
+          toast.error("Payment couldn't load. Please refresh and try again.");
+          setIsProcessing(false);
+          return;
+        }
+
+        const razorpay = new window.Razorpay({
+          key: paymentOrder.keyId,
+          amount: paymentOrder.amount,
+          currency: paymentOrder.currency,
+          order_id: paymentOrder.razorpayOrderId,
+          name: "Saree Grace",
+          description: `Order ${order.orderNumber}`,
+          theme: { color: "#7A2635" },
+          handler: (response) => {
+            // Real payment confirmation only ever comes from the backend's own signature
+            // verification below — this callback firing is not treated as "paid" on its own.
+            void (async () => {
+              try {
+                await verifyPayment({
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                }).unwrap();
+                router.push(`/checkout/success/${order._id}`);
+              } catch (error) {
+                toast.error(toErrorMessage(error, "We couldn't confirm your payment."));
+                router.push(`/checkout/failed/${order._id}`);
+              } finally {
+                setIsProcessing(false);
+              }
+            })();
+          },
+          modal: {
+            ondismiss: () => {
+              setIsProcessing(false);
+              router.push(`/checkout/failed/${order._id}`);
+            },
+          },
+        });
+        razorpay.open();
+      } catch (error) {
+        toast.error(toErrorMessage(error, "Couldn't start payment. Please try again."));
+        setIsProcessing(false);
+      }
+    },
+    [createRazorpayOrder, verifyPayment, router],
+  );
+
+  return { payForOrder, isProcessing };
+}

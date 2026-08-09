@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Env vars needed for `next build` to succeed: src/lib/env.ts validates these at module-load
+# time (Zod), and building still evaluates every route's modules even though none of them make
+# a real network call at build time (no product/category data is fetched here — see
+# NOTES.md/BACKEND_CONTRACT.md, product/category pages are server-rendered on demand `ƒ`, not
+# statically generated from real data). These are dummy, non-secret values only good enough to
+# pass that validation, not to reach a real backend.
+env:
+  NEXT_PUBLIC_API_BASE_URL: http://localhost:4000/api/v1
+  NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+jobs:
+  lint-typecheck-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Unit & integration tests
+        run: npm test -- --ci
+
+      - name: Build
+        run: npm run build
+
+  # Deploy is intentionally NOT wired up — it needs a real hosting target (Vercel or otherwise)
+  # and its deploy secrets, neither of which exist for this project yet. See NOTES.md Section 19
+  # for exactly what's missing and what to configure once a hosting platform is chosen.
+  # e2e:
+  #   Not run in CI either — e2e/purchase-journey.spec.ts needs a REAL running backend + MongoDB
+  #   (BACKEND_CONTRACT.md), not mocks, which this workflow has no access to. Running it here
+  #   would need the backend repo checked out alongside this one, a MongoDB replica set service
+  #   container, and seeded data — real infra this repo alone can't provide. See NOTES.md.
