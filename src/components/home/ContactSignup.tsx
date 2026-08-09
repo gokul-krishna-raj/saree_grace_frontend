@@ -11,7 +11,9 @@ import { env } from "@/lib/env";
 // NEXT_PUBLIC_WHATSAPP_NUMBER — never a fabricated phone number.
 export function ContactSignup() {
   const whatsappNumber = env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-  const href = whatsappNumber ? `https://wa.me/${whatsappNumber}` : "mailto:hello@sareegrace.com";
+  const href = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}`
+    : `mailto:${env.NEXT_PUBLIC_CONTACT_EMAIL}`;
   const label = whatsappNumber ? "Message us on WhatsApp" : "Email us for updates";
 
   return (

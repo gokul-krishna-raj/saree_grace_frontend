@@ -31,3 +31,14 @@ body {
   color: var(--foreground);
   font-family: var(--font-body);
 }
+
+/* Hides the scrollbar on horizontally-scrollable rows (e.g. the homepage category rail) while
+   keeping native scroll/swipe behavior intact. */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

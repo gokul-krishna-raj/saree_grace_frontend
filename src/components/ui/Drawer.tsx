@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { type ReactNode, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 import { useFocusTrap } from "@/hooks/useFocusTrap";
@@ -22,6 +22,16 @@ export interface DrawerProps {
 export function Drawer({ open, onClose, title, children, side = "right", className }: DrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   useFocusTrap(panelRef, open, onClose);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [open]);
 
   if (!open) return null;
 

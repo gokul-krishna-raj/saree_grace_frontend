@@ -1,3 +1,4 @@
+import { buildFormDataWithFile } from "@/lib/formData";
 import { baseApi } from "@/store/api/baseApi";
 import type { ApiSuccess, Category, CategoryTreeNode } from "@/types";
 
@@ -5,6 +6,7 @@ export interface CreateCategoryRequest {
   name: string;
   description?: string;
   parentCategory?: string | null;
+  image?: File;
 }
 
 export interface UpdateCategoryRequest {
@@ -13,6 +15,10 @@ export interface UpdateCategoryRequest {
   description?: string;
   parentCategory?: string | null;
   isActive?: boolean;
+  image?: File;
+  // Clears the category's image when no replacement `image` is provided — ignored by the
+  // backend if `image` is also present, since uploading a new one already replaces the old.
+  removeImage?: boolean;
 }
 
 export const categoriesApi = baseApi.injectEndpoints({
@@ -33,7 +39,11 @@ export const categoriesApi = baseApi.injectEndpoints({
       providesTags: [{ type: "Category", id: "TREE" }],
     }),
     createCategory: builder.mutation<Category, CreateCategoryRequest>({
-      query: (body) => ({ url: "/categories", method: "POST", body }),
+      query: ({ image, ...fields }) => ({
+        url: "/categories",
+        method: "POST",
+        body: buildFormDataWithFile(fields, image, "image"),
+      }),
       transformResponse: (response: ApiSuccess<{ category: Category }>) => response.data.category,
       invalidatesTags: [
         { type: "Category", id: "LIST" },
@@ -41,7 +51,11 @@ export const categoriesApi = baseApi.injectEndpoints({
       ],
     }),
     updateCategory: builder.mutation<Category, UpdateCategoryRequest>({
-      query: ({ id, ...body }) => ({ url: `/categories/${id}`, method: "PUT", body }),
+      query: ({ id, image, ...fields }) => ({
+        url: `/categories/${id}`,
+        method: "PUT",
+        body: buildFormDataWithFile(fields, image, "image"),
+      }),
       transformResponse: (response: ApiSuccess<{ category: Category }>) => response.data.category,
       invalidatesTags: (_result, _error, { id }) => [
         { type: "Category", id },

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { BrandStory } from "@/components/home/BrandStory";
 import { CategoryShowcase } from "@/components/home/CategoryShowcase";
 import { ContactSignup } from "@/components/home/ContactSignup";
@@ -9,12 +11,20 @@ export default function HomePage() {
     <main className="flex flex-1 flex-col gap-12 pb-12">
       <Hero />
       <section className="flex flex-col gap-4">
-        <h2 className="font-heading text-maroon-900 px-4 text-2xl">New arrivals</h2>
-        <FeaturedCarousel />
+        <div className="flex items-center justify-between px-4">
+          <h2 className="font-heading text-maroon-900 text-2xl">Shop by category</h2>
+          <Link
+            href="/categories"
+            className="text-maroon-700 hover:text-maroon-900 text-sm font-medium"
+          >
+            View All
+          </Link>
+        </div>
+        <CategoryShowcase />
       </section>
       <section className="flex flex-col gap-4">
-        <h2 className="font-heading text-maroon-900 px-4 text-2xl">Shop by category</h2>
-        <CategoryShowcase />
+        <h2 className="font-heading text-maroon-900 px-4 text-2xl">New arrivals</h2>
+        <FeaturedCarousel />
       </section>
       <BrandStory />
       <ContactSignup />

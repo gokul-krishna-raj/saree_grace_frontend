@@ -10,6 +10,7 @@ export interface ImageDropzoneProps {
   onChange: (files: File[]) => void;
   maxFiles?: number;
   disabled?: boolean;
+  label?: string;
 }
 
 // Shared by admin product/variant creation and reviews — drag-and-drop or click-to-browse,
@@ -20,7 +21,13 @@ export interface ImageDropzoneProps {
 // — the mutation's `isLoading` state drives an indeterminate "Uploading..." state instead. See
 // NOTES.md if true progress ever becomes a real requirement — it would need a dedicated
 // XHR-based upload path, not a small tweak to the existing one.
-export function ImageDropzone({ files, onChange, maxFiles = 8, disabled }: ImageDropzoneProps) {
+export function ImageDropzone({
+  files,
+  onChange,
+  maxFiles = 8,
+  disabled,
+  label = "Drag images here, or click to browse",
+}: ImageDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -32,7 +39,10 @@ export function ImageDropzone({ files, onChange, maxFiles = 8, disabled }: Image
   }, [previewUrls]);
 
   function addFiles(newFiles: FileList | File[]) {
-    onChange([...files, ...Array.from(newFiles)].slice(0, maxFiles));
+    // Keep the newest files when over capacity (rather than the earliest) — so a maxFiles={1}
+    // dropzone acts as "replace" when the admin picks a different file, instead of silently
+    // discarding it in favor of the one already selected.
+    onChange([...files, ...Array.from(newFiles)].slice(-maxFiles));
   }
 
   function removeAt(index: number) {
@@ -74,7 +84,7 @@ export function ImageDropzone({ files, onChange, maxFiles = 8, disabled }: Image
       >
         <ImagePlus className="h-6 w-6" aria-hidden="true" />
         <span>
-          Drag images here, or click to browse ({files.length}/{maxFiles})
+          {label} ({files.length}/{maxFiles})
         </span>
         <input
           ref={inputRef}

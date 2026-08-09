@@ -10,7 +10,14 @@ const STATIC_ROUTES: Array<{
 }> = [
   { path: "/", changeFrequency: "daily", priority: 1 },
   { path: "/products", changeFrequency: "daily", priority: 0.9 },
+  { path: "/categories", changeFrequency: "weekly", priority: 0.6 },
   { path: "/about", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/contact", changeFrequency: "monthly", priority: 0.4 },
+  { path: "/faq", changeFrequency: "monthly", priority: 0.4 },
+  { path: "/shipping-policy", changeFrequency: "monthly", priority: 0.3 },
+  { path: "/refund-policy", changeFrequency: "monthly", priority: 0.3 },
+  { path: "/privacy-policy", changeFrequency: "yearly", priority: 0.2 },
+  { path: "/terms-and-conditions", changeFrequency: "yearly", priority: 0.2 },
 ];
 
 // Only public, indexable pages — never /account, /checkout, /admin, or auth pages, which are

@@ -3,10 +3,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { SerializedError } from "@reduxjs/toolkit";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
-import { useEffect } from "react";
+import Image from "next/image";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { ImageDropzone } from "@/components/admin/ImageDropzone";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
@@ -27,60 +29,68 @@ const categoryFormSchema = z.object({
 });
 type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 
-export function CategoryFormModal({
-  open,
-  onClose,
+// A fresh instance per open (via the `key` below) so every field — including local-only UI
+// state like the picked image file — starts from the right values without a reset-on-prop
+// effect; unmounting on close and remounting on open already clears everything for free.
+function CategoryForm({
   editingCategory,
+  onClose,
 }: {
-  open: boolean;
-  onClose: () => void;
   editingCategory: Category | null;
+  onClose: () => void;
 }) {
   const { data: categories } = useGetCategoriesQuery(undefined);
   const [createCategory, createResult] = useCreateCategoryMutation();
   const [updateCategory, updateResult] = useUpdateCategoryMutation();
-  // RTK Query resets each mutation's own `error` on the next trigger call, so reusing it here
-  // (rather than separate local state) means there's nothing to manually clear when the modal
-  // reopens for a different category — one less "reset UI state on prop change" effect to write.
   const isLoading = createResult.isLoading || updateResult.isLoading;
   const mutationError = editingCategory ? updateResult.error : createResult.error;
+
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [removeImage, setRemoveImage] = useState(false);
 
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors },
-  } = useForm<CategoryFormValues>({ resolver: zodResolver(categoryFormSchema) });
-
-  useEffect(() => {
-    if (open) {
-      reset({
-        name: editingCategory?.name ?? "",
-        description: editingCategory?.description ?? "",
-        parentCategory:
-          (typeof editingCategory?.parentCategory === "string"
-            ? editingCategory.parentCategory
-            : "") ?? "",
-      });
-    }
-  }, [open, editingCategory, reset]);
+  } = useForm<CategoryFormValues>({
+    resolver: zodResolver(categoryFormSchema),
+    defaultValues: {
+      name: editingCategory?.name ?? "",
+      description: editingCategory?.description ?? "",
+      parentCategory:
+        (typeof editingCategory?.parentCategory === "string"
+          ? editingCategory.parentCategory
+          : "") ?? "",
+    },
+  });
 
   // A category can't be its own parent — the backend rejects this too, but filtering it out
   // of the dropdown is a better experience than letting someone pick it and hit a 400.
   const parentOptions =
     categories?.filter((category) => category._id !== editingCategory?._id) ?? [];
 
+  const showExistingImage = Boolean(editingCategory?.image) && !removeImage;
+
   async function onSubmit(values: CategoryFormValues) {
     try {
+      const image = imageFiles[0];
       if (editingCategory) {
         await updateCategory({
           id: editingCategory._id,
           ...values,
           parentCategory: values.parentCategory || null,
+          image,
+          // Only clears the image when the admin removed it without picking a replacement —
+          // picking a new file already replaces the old one on the backend.
+          removeImage: removeImage && !image ? true : undefined,
         }).unwrap();
         toast.success("Category updated");
       } else {
-        await createCategory({ ...values, parentCategory: values.parentCategory || null }).unwrap();
+        await createCategory({
+          ...values,
+          parentCategory: values.parentCategory || null,
+          image,
+        }).unwrap();
         toast.success("Category created");
       }
       onClose();
@@ -90,27 +100,78 @@ export function CategoryFormModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={editingCategory ? "Edit category" : "New category"}>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
-        <Input label="Name" error={errors.name?.message} {...register("name")} />
-        <Input label="Description (optional)" {...register("description")} />
-        <Select label="Parent category (optional)" {...register("parentCategory")}>
-          <option value="">No parent (top-level)</option>
-          {parentOptions.map((category) => (
-            <option key={category._id} value={category._id}>
-              {category.name}
-            </option>
-          ))}
-        </Select>
-        {mutationError ? (
-          <p role="alert" className="text-sm text-red-600">
-            {getApiErrorMessage(mutationError as FetchBaseQueryError | SerializedError)}
-          </p>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
+      <Input label="Name" error={errors.name?.message} {...register("name")} />
+      <Input label="Description (optional)" {...register("description")} />
+      <Select label="Parent category (optional)" {...register("parentCategory")}>
+        <option value="">No parent (top-level)</option>
+        {parentOptions.map((category) => (
+          <option key={category._id} value={category._id}>
+            {category.name}
+          </option>
+        ))}
+      </Select>
+
+      <div>
+        <span className="text-maroon-900 mb-1.5 block text-sm font-medium">Image (optional)</span>
+        {showExistingImage && editingCategory?.image ? (
+          <div className="border-maroon-100 relative mb-3 h-20 w-20 overflow-hidden rounded-full border">
+            <Image
+              src={editingCategory.image.url}
+              alt=""
+              fill
+              sizes="80px"
+              className="object-cover"
+            />
+            <button
+              type="button"
+              onClick={() => setRemoveImage(true)}
+              aria-label="Remove image"
+              className="absolute top-0.5 right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-red-600"
+            >
+              ✕
+            </button>
+          </div>
         ) : null}
-        <Button type="submit" isLoading={isLoading} disabled={isLoading}>
-          {editingCategory ? "Save changes" : "Create category"}
-        </Button>
-      </form>
+        <ImageDropzone
+          files={imageFiles}
+          onChange={setImageFiles}
+          maxFiles={1}
+          disabled={isLoading}
+          label="Drag an image here, or click to browse"
+        />
+      </div>
+
+      {mutationError ? (
+        <p role="alert" className="text-sm text-red-600">
+          {getApiErrorMessage(mutationError as FetchBaseQueryError | SerializedError)}
+        </p>
+      ) : null}
+      <Button type="submit" isLoading={isLoading} disabled={isLoading}>
+        {editingCategory ? "Save changes" : "Create category"}
+      </Button>
+    </form>
+  );
+}
+
+export function CategoryFormModal({
+  open,
+  onClose,
+  editingCategory,
+}: {
+  open: boolean;
+  onClose: () => void;
+  editingCategory: Category | null;
+}) {
+  return (
+    <Modal open={open} onClose={onClose} title={editingCategory ? "Edit category" : "New category"}>
+      {open ? (
+        <CategoryForm
+          key={editingCategory?._id ?? "new"}
+          editingCategory={editingCategory}
+          onClose={onClose}
+        />
+      ) : null}
     </Modal>
   );
 }

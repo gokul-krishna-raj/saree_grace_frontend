@@ -11,6 +11,7 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { OrganizationJsonLd } from "@/components/seo/OrganizationJsonLd";
 import { env } from "@/lib/env";
 import { StoreProvider } from "@/store/StoreProvider";
 
@@ -39,7 +40,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable} h-full antialiased`}>
-      <body className="bg-cream font-body text-maroon-900 flex min-h-full flex-col pb-14 lg:pb-0">
+      <body
+        className="bg-cream font-body text-maroon-900 flex min-h-full flex-col pb-14 lg:pb-0"
+        suppressHydrationWarning
+      >
+        <OrganizationJsonLd />
         <GoogleAnalytics />
         <WebVitals />
         <StoreProvider>

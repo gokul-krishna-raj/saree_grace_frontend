@@ -1,42 +1,53 @@
 "use client";
 
-import { Heart, Menu, ShoppingBag, User } from "lucide-react";
+import { Heart, Menu, Search, ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { useCartCount } from "@/hooks/useCartCount";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setCartDrawerOpen, setMobileMenuOpen } from "@/store/slices/uiSlice";
 
 import { MobileMenu } from "./MobileMenu";
+import { SearchOverlay } from "./SearchOverlay";
 
 const NAV_LINKS = [
+  { href: "/", label: "Home" },
   { href: "/products", label: "Shop" },
-  { href: "/products?handloomOnly=true", label: "Loom-made" },
-  { href: "/about", label: "Our Story" },
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export function Header() {
   const dispatch = useAppDispatch();
   const cartCount = useCartCount();
   const authStatus = useAppSelector((state) => state.auth.status);
+  const mobileMenuOpen = useAppSelector((state) => state.ui.mobileMenuOpen);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <header className="border-maroon-50 bg-cream/95 sticky top-0 z-40 border-b backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-        <button
-          type="button"
-          onClick={() => dispatch(setMobileMenuOpen(true))}
-          aria-label="Open menu"
-          className="text-maroon-700 hover:bg-maroon-50 flex h-11 w-11 items-center justify-center rounded-full lg:hidden"
-        >
-          <Menu className="h-6 w-6" aria-hidden="true" />
-        </button>
+      <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between px-4 lg:px-6">
+        <div className="flex w-11 items-center justify-start lg:hidden">
+          <button
+            type="button"
+            onClick={() => dispatch(setMobileMenuOpen(true))}
+            aria-label="Open menu"
+            aria-expanded={mobileMenuOpen}
+            className="text-maroon-700 hover:bg-maroon-50 focus-visible:outline-maroon-600 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            <Menu className="h-6 w-6" aria-hidden="true" />
+          </button>
+        </div>
 
-        <Link href="/" className="font-heading text-maroon-900 text-xl">
+        <Link
+          href="/"
+          className="font-heading text-maroon-900 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xl lg:static lg:top-auto lg:translate-x-0 lg:-translate-y-0"
+        >
           Saree Grace
         </Link>
 
-        <nav className="hidden flex-1 items-center justify-center gap-6 lg:flex">
+        <nav className="hidden flex-1 justify-center gap-8 lg:flex">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
@@ -48,26 +59,42 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-1">
+        <div className="flex w-11 items-center justify-end lg:hidden">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Open search"
+            aria-expanded={searchOpen}
+            aria-controls="search-dialog"
+            className="text-maroon-700 hover:bg-maroon-50 focus-visible:outline-maroon-600 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            <Search className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="hidden items-center gap-1 lg:ml-auto lg:flex">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Open search"
+            aria-expanded={searchOpen}
+            aria-controls="search-dialog"
+            className="text-maroon-700 hover:bg-maroon-50 focus-visible:outline-maroon-600 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            <Search className="h-5 w-5" aria-hidden="true" />
+          </button>
           <Link
             href="/wishlist"
             aria-label="Wishlist"
-            className="text-maroon-700 hover:bg-maroon-50 flex h-11 w-11 items-center justify-center rounded-full"
+            className="text-maroon-700 hover:bg-maroon-50 focus-visible:outline-maroon-600 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <Heart className="h-5 w-5" aria-hidden="true" />
-          </Link>
-          <Link
-            href={authStatus === "authenticated" ? "/account" : "/login"}
-            aria-label="Account"
-            className="text-maroon-700 hover:bg-maroon-50 flex h-11 w-11 items-center justify-center rounded-full"
-          >
-            <User className="h-5 w-5" aria-hidden="true" />
           </Link>
           <button
             type="button"
             onClick={() => dispatch(setCartDrawerOpen(true))}
             aria-label={`Cart, ${cartCount} item${cartCount === 1 ? "" : "s"}`}
-            className="text-maroon-700 hover:bg-maroon-50 relative flex h-11 w-11 items-center justify-center rounded-full"
+            className="text-maroon-700 hover:bg-maroon-50 focus-visible:outline-maroon-600 relative flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <ShoppingBag className="h-5 w-5" aria-hidden="true" />
             {cartCount > 0 ? (
@@ -76,9 +103,17 @@ export function Header() {
               </span>
             ) : null}
           </button>
+          <Link
+            href={authStatus === "authenticated" ? "/account" : "/login"}
+            aria-label="Account"
+            className="text-maroon-700 hover:bg-maroon-50 focus-visible:outline-maroon-600 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            <User className="h-5 w-5" aria-hidden="true" />
+          </Link>
         </div>
       </div>
       <MobileMenu />
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }

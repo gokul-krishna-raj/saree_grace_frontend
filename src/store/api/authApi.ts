@@ -92,13 +92,13 @@ export const authApi = baseApi.injectEndpoints({
     // Logout is best-effort against the backend — it must still clear local session state
     // (and cached data belonging to this user) even if the network call fails or there's no
     // refresh token to revoke (e.g. it already expired).
-    logout: builder.mutation<void, void>({
+    logout: builder.mutation<null, void>({
       queryFn: async (_arg, _api, _extraOptions, baseQuery) => {
         const refreshToken = getStoredRefreshToken();
         if (refreshToken) {
           await baseQuery({ url: "/auth/logout", method: "POST", body: { refreshToken } });
         }
-        return { data: undefined };
+        return { data: null };
       },
       onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
         await queryFulfilled.catch(() => undefined);
