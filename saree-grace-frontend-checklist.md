@@ -292,7 +292,7 @@ Documented in `CLAUDE_FRONTEND.md`.
       `/products` listing remain client-rendered (Sections 5/6) — flagged repeatedly across
       those sections and not resolved here; see NOTES.md for why and what it would take
 - [x] Descriptive, keyword-natural copy on category and About pages (ties into the SEO plan —
-      "Elampillai handloom sarees" etc.) — **built `/about` in this section** (it didn't exist
+      "Elampillai sarees" etc.) — **built `/about` in this section** (it didn't exist
       yet — Header/Footer had a dead link to it, see NOTES.md); no dedicated category pages
       exist (categories are a filter on `/products`, matching the backend's own lack of a
       category-detail endpoint), so category copy lives on the listing page itself instead

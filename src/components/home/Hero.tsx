@@ -12,11 +12,11 @@ export function Hero() {
             Woven in Elampillai, Tamil Nadu
           </span>
           <h1 className="font-heading text-3xl leading-tight text-white sm:text-4xl lg:text-5xl">
-            Handloom sarees, woven with generations of craft
+            Elampillai sarees, woven with generations of craft
           </h1>
           <p className="text-cream/80 max-w-md text-base">
-            Every Saree Grace piece is handwoven by Elampillai artisans — an authentic drape, made
-            for everyday elegance and special occasions alike.
+            Every Saree Grace piece is crafted with Elampillai expertise — designed for everyday
+            elegance and special occasions alike.
           </p>
           <Link
             href="/products"

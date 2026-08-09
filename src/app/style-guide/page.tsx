@@ -67,7 +67,7 @@ export default function StyleGuidePage() {
         <div className="grid gap-4 sm:grid-cols-3">
           <Card>
             <p className="font-heading text-maroon-900 text-lg">Elampillai Cotton Saree</p>
-            <p className="text-maroon-600 text-sm">Handloom · Maroon &amp; Gold border</p>
+            <p className="text-maroon-600 text-sm">Elampillai · Maroon &amp; Gold border</p>
           </Card>
           <div className="flex flex-col gap-2">
             <Skeleton className="h-40 w-full" />

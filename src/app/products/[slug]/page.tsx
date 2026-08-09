@@ -13,6 +13,13 @@ async function getProduct(slug: string): Promise<Product | null> {
   return data?.product ?? null;
 }
 
+function sanitizeSeoText(text: string) {
+  return text
+    .replace(/\bhandloom\b/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 export async function generateMetadata({
   params,
 }: PageProps<"/products/[slug]">): Promise<Metadata> {
@@ -25,15 +32,22 @@ export async function generateMetadata({
     return { title: "Product not found", robots: { index: false, follow: false } };
   }
 
-  const description = product.description.slice(0, 160);
+  const title = sanitizeSeoText(product.name);
+  const description = sanitizeSeoText(product.description.slice(0, 160));
   const image = product.images[0]?.url;
 
   return {
-    title: product.name,
+    title,
     description,
     alternates: { canonical: `/products/${product.slug}` },
     openGraph: {
-      title: product.name,
+      title,
+      description,
+      images: image ? [{ url: image }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
       description,
       images: image ? [{ url: image }] : undefined,
     },
@@ -51,8 +65,8 @@ export default async function ProductDetailPage({ params }: PageProps<"/products
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: product.name,
-    description: product.description,
+    name: sanitizeSeoText(product.name),
+    description: sanitizeSeoText(product.description),
     image: product.images.map((image) => image.url),
     offers: {
       "@type": "Offer",

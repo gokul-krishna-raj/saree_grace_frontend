@@ -1,7 +1,7 @@
 # Saree Grace — Frontend
 
 Next.js (App Router, Turbopack) storefront for Saree Grace, an e-commerce site selling
-Elampillai handloom sarees. Talks to a separate Express/Mongoose backend
+Elampillai sarees. Talks to a separate Express/Mongoose backend
 (`../saree_grace_backend`) over a REST API — see `BACKEND_CONTRACT.md` for the contract as
 actually implemented there, and `CLAUDE_FRONTEND.md` for this project's own conventions
 (design tokens, RTK Query patterns, component conventions).

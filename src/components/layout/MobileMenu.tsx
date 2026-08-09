@@ -8,7 +8,7 @@ import { setMobileMenuOpen } from "@/store/slices/uiSlice";
 
 const NAV_LINKS = [
   { href: "/products", label: "Shop all" },
-  { href: "/products?handloomOnly=true", label: "Handloom sarees" },
+  { href: "/products?handloomOnly=true", label: "Loom-made sarees" },
   { href: "/about", label: "Our story" },
   { href: "/wishlist", label: "Wishlist" },
 ];

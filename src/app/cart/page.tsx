@@ -61,7 +61,7 @@ export default function CartPage() {
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-24 text-center">
         <h1 className="font-heading text-maroon-900 text-2xl">Your cart is empty</h1>
         <p className="text-maroon-600 text-sm">
-          Explore our handloom collection and add something you love.
+          Explore our Elampillai saree collection and add something you love.
         </p>
         <Link href="/products" className={cn(buttonVariants({ variant: "primary" }))}>
           Shop sarees

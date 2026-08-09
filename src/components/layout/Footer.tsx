@@ -9,14 +9,13 @@ export function Footer() {
         <div>
           <p className="font-heading text-maroon-900 text-lg">Saree Grace</p>
           <p className="text-maroon-600 mt-2 text-sm">
-            Authentic Elampillai handloom sarees, woven by local artisans and delivered to your
-            door.
+            Authentic Elampillai sarees, crafted by local artisans and delivered to your door.
           </p>
         </div>
         <div className="text-maroon-700 flex flex-col gap-2 text-sm">
           <p className="text-maroon-900 font-medium">Shop</p>
           <Link href="/products">All sarees</Link>
-          <Link href="/products?handloomOnly=true">Handloom collection</Link>
+          <Link href="/products?handloomOnly=true">Elampillai saree collection</Link>
           <Link href="/about">Our story</Link>
         </div>
         <div className="text-maroon-700 flex flex-col gap-2 text-sm">

@@ -18,7 +18,7 @@ export function ContactSignup() {
     <section className="mx-auto max-w-2xl px-4 py-12 text-center">
       <h2 className="font-heading text-maroon-900 text-2xl">Stay in the loop</h2>
       <p className="text-maroon-600 mt-2 text-sm">
-        Hear about new arrivals and handloom stories first.
+        Hear about new arrivals and saree stories first.
       </p>
       <a
         href={href}

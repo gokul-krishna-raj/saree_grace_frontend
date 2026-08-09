@@ -29,11 +29,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
   title: {
-    default: "Saree Grace — Elampillai Handloom Sarees",
+    default: "Saree Grace — Elampillai sarees",
     template: "%s | Saree Grace",
   },
   description:
-    "Authentic Elampillai handloom sarees, handpicked for everyday elegance and special occasions.",
+    "Authentic Elampillai sarees, handpicked for everyday elegance and special occasions.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

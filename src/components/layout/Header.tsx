@@ -11,7 +11,7 @@ import { MobileMenu } from "./MobileMenu";
 
 const NAV_LINKS = [
   { href: "/products", label: "Shop" },
-  { href: "/products?handloomOnly=true", label: "Handloom" },
+  { href: "/products?handloomOnly=true", label: "Loom-made" },
   { href: "/about", label: "Our Story" },
 ];
 

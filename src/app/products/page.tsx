@@ -8,7 +8,7 @@ import { ProductListingClient } from "./ProductListingClient";
 export function generateMetadata(): Metadata {
   return {
     title: "Shop Sarees",
-    description: "Browse handloom and designer sarees from Saree Grace.",
+    description: "Browse sarees and designer pieces from Saree Grace.",
     // Filtered/paginated variants of this page should not compete with the canonical, unfiltered
     // listing for search ranking (checklist Section 15) — every query-string variant points back
     // at the plain /products URL.
