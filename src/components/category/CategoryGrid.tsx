@@ -13,7 +13,7 @@ export function CategoryGrid() {
       <div className="grid grid-cols-3 gap-x-4 gap-y-8 px-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
         {Array.from({ length: 12 }).map((_, index) => (
           <div key={index} className="flex flex-col items-center gap-2">
-            <Skeleton className="h-24 w-24 rounded-full" />
+            <Skeleton className="h-28 w-28 rounded-full" />
             <Skeleton className="h-3 w-16" />
           </div>
         ))}

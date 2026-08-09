@@ -13,6 +13,7 @@ export const productBaseFieldsSchema = z.object({
   name: z.string().trim().min(2, "At least 2 characters").max(200),
   description: z.string().trim().min(1, "Required").max(5000),
   category: z.string().min(1, "Select a category"),
+  occasions: z.array(z.string()).optional(),
   fabric: z.string().trim().max(100).optional(),
   color: z.string().trim().max(100).optional(),
   isHandloom: z.boolean(),

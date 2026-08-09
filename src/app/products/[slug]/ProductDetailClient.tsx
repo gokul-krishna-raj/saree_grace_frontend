@@ -1,6 +1,7 @@
 "use client";
 
 import { Heart, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { AddToCartControls } from "@/components/product/AddToCartControls";
@@ -12,11 +13,16 @@ import { trackViewItem } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/formatPrice";
 import { applySelection, findMatchingVariant, getDefaultSelection } from "@/lib/variantSelection";
-import type { Product } from "@/types";
+import type { Occasion, Product } from "@/types";
 
 export function ProductDetailClient({ product }: { product: Product }) {
   const attributeNames = product.variantAttributeNames ?? [];
   const variants = product.variants ?? [];
+  // Only entries the API actually populated (not just an ObjectId string) can be shown —
+  // rendering a raw id would be a meaningless label and a broken link.
+  const occasions = (product.occasions ?? []).filter(
+    (occasion): occasion is Occasion => typeof occasion !== "string",
+  );
   const [selection, setSelection] = useState(() => getDefaultSelection(variants, attributeNames));
   const { isWishlisted, toggle, isLoading: isWishlistLoading } = useWishlistToggle(product._id);
 
@@ -105,6 +111,21 @@ export function ProductDetailClient({ product }: { product: Product }) {
         />
 
         <p className="text-maroon-700 leading-relaxed">{product.description}</p>
+
+        {occasions.length > 0 ? (
+          <div>
+            <h2 className="text-maroon-900 text-sm font-medium">Occasions</h2>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {occasions.map((occasion) => (
+                <Link key={occasion._id} href={`/products?occasion=${occasion._id}`}>
+                  <Badge variant="outline" className="hover:bg-maroon-50">
+                    {occasion.name}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="bg-maroon-50 flex items-start gap-3 rounded-lg p-4">
           <ShieldCheck className="text-maroon-700 mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />

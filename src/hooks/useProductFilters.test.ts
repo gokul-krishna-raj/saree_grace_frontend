@@ -47,6 +47,16 @@ describe("useProductFilters", () => {
     expect(params.get("handloomOnly")).toBe("true");
   });
 
+  it("writes a multi-occasion selection to the URL as a single comma-separated param", () => {
+    const { result } = renderHook(() => useProductFilters());
+
+    result.current.updateFilters({ occasions: ["occ1", "occ2"] });
+
+    const [url] = replaceMock.mock.calls[0];
+    const params = new URLSearchParams(url.split("?")[1]);
+    expect(params.get("occasion")).toBe("occ1,occ2");
+  });
+
   it("navigates to the bare path when all filters are cleared", () => {
     currentSearchParams = new URLSearchParams("fabric=Silk");
     const { result } = renderHook(() => useProductFilters());

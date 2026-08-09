@@ -5,21 +5,24 @@ import type { SerializedError } from "@reduxjs/toolkit";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
 import { ImageDropzone } from "@/components/admin/ImageDropzone";
 import { Button } from "@/components/ui/Button";
+import { CheckboxGroup } from "@/components/ui/CheckboxGroup";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { toast } from "@/lib/toast";
 import { type SimpleProductFormValues, simpleProductSchema } from "@/lib/validation/adminProduct";
 import { useGetCategoriesQuery } from "@/store/api/categoriesApi";
+import { useGetOccasionsQuery } from "@/store/api/occasionsApi";
 import { useCreateSimpleProductMutation } from "@/store/api/productsApi";
 
 export function SimpleProductForm() {
   const router = useRouter();
   const { data: categories } = useGetCategoriesQuery(undefined);
+  const { data: occasions } = useGetOccasionsQuery();
   const [createSimpleProduct, { isLoading }] = useCreateSimpleProductMutation();
   const [images, setImages] = useState<File[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -27,6 +30,7 @@ export function SimpleProductForm() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<SimpleProductFormValues>({
     resolver: zodResolver(simpleProductSchema),
@@ -68,6 +72,22 @@ export function SimpleProductForm() {
           </option>
         ))}
       </Select>
+      <Controller
+        control={control}
+        name="occasions"
+        render={({ field }) => (
+          <CheckboxGroup
+            label="Occasions (optional)"
+            options={(occasions ?? []).map((occasion) => ({
+              value: occasion._id,
+              label: occasion.name,
+            }))}
+            value={field.value ?? []}
+            onChange={field.onChange}
+            error={errors.occasions?.message}
+          />
+        )}
+      />
       <div className="grid grid-cols-2 gap-3">
         <Input label="Fabric" {...register("fabric")} />
         <Input label="Colour" {...register("color")} />

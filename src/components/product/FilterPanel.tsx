@@ -3,15 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { CheckboxGroup } from "@/components/ui/CheckboxGroup";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useProductFilters } from "@/hooks/useProductFilters";
 import { useGetCategoriesQuery } from "@/store/api/categoriesApi";
+import { useGetOccasionsQuery } from "@/store/api/occasionsApi";
 
 export function FilterPanel({ onApplied }: { onApplied?: () => void }) {
   const { filters, updateFilters, setFilters } = useProductFilters();
   const { data: categories } = useGetCategoriesQuery(undefined);
+  const { data: occasions } = useGetOccasionsQuery();
+  const activeOccasions = occasions?.filter((occasion) => occasion.isActive) ?? [];
 
   const [fabric, setFabric] = useState(filters.fabric ?? "");
   const [color, setColor] = useState(filters.color ?? "");
@@ -91,7 +95,7 @@ export function FilterPanel({ onApplied }: { onApplied?: () => void }) {
           onChange={(event) => setMaxPrice(event.target.value)}
         />
       </div>
-      <label className="text-maroon-800 flex items-center gap-2 text-sm">
+      {/* <label className="text-maroon-800 flex items-center gap-2 text-sm">
         <input
           type="checkbox"
           checked={filters.handloomOnly ?? false}
@@ -99,7 +103,18 @@ export function FilterPanel({ onApplied }: { onApplied?: () => void }) {
           className="border-maroon-200 text-maroon-700 focus-visible:outline-maroon-600 h-5 w-5 rounded focus-visible:outline-2"
         />
         Handloom only
-      </label>
+      </label> */}
+      {activeOccasions.length > 0 ? (
+        <CheckboxGroup
+          label="Occasion"
+          options={activeOccasions.map((occasion) => ({
+            value: occasion._id,
+            label: occasion.name,
+          }))}
+          value={filters.occasions ?? []}
+          onChange={(next) => updateFilters({ occasions: next.length ? next : undefined })}
+        />
+      ) : null}
       <Button variant="ghost" onClick={clearAll}>
         Clear filters
       </Button>

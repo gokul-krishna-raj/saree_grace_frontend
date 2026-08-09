@@ -12,8 +12,8 @@ export function CategoryShowcase() {
     return (
       <div className="scrollbar-hide flex gap-5 overflow-x-auto px-4 pb-1">
         {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="flex w-20 shrink-0 flex-col items-center gap-2">
-            <Skeleton className="h-20 w-20 rounded-full" />
+          <div key={index} className="flex w-24 shrink-0 flex-col items-center gap-2">
+            <Skeleton className="h-24 w-24 rounded-full" />
             <Skeleton className="h-3 w-14" />
           </div>
         ))}

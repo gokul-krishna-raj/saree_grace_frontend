@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { getApiErrorMessage } from "@/lib/apiError";
+import { getApiErrorCode, getApiErrorMessage } from "@/lib/apiError";
 import { type LoginFormValues, loginSchema } from "@/lib/validation/auth";
 import { useLoginMutation } from "@/store/api/authApi";
 
@@ -32,9 +32,12 @@ export function LoginForm() {
       await login(values).unwrap();
       router.push(redirectTo);
     } catch (error) {
-      setError("root", {
-        message: getApiErrorMessage(error as FetchBaseQueryError | SerializedError),
-      });
+      const typedError = error as FetchBaseQueryError | SerializedError;
+      if (getApiErrorCode(typedError) === "EMAIL_NOT_VERIFIED") {
+        router.push(`/verify-otp?email=${encodeURIComponent(values.email)}`);
+        return;
+      }
+      setError("root", { message: getApiErrorMessage(typedError) });
     }
   };
 

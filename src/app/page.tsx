@@ -1,10 +1,14 @@
 import Link from "next/link";
 
+import { BestSellersCarousel } from "@/components/home/BestSellersCarousel";
 import { BrandStory } from "@/components/home/BrandStory";
 import { CategoryShowcase } from "@/components/home/CategoryShowcase";
 import { ContactSignup } from "@/components/home/ContactSignup";
 import { FeaturedCarousel } from "@/components/home/FeaturedCarousel";
 import { Hero } from "@/components/home/Hero";
+import { OccasionShowcase } from "@/components/home/OccasionShowcase";
+import { ShopByPrice } from "@/components/home/ShopByPrice";
+import { WhyShopWithUs } from "@/components/home/WhyShopWithUs";
 
 export default function HomePage() {
   return (
@@ -22,10 +26,23 @@ export default function HomePage() {
         </div>
         <CategoryShowcase />
       </section>
+
       <section className="flex flex-col gap-4">
         <h2 className="font-heading text-maroon-900 px-4 text-2xl">New arrivals</h2>
         <FeaturedCarousel />
       </section>
+      <ShopByPrice />
+      <section className="flex flex-col gap-4">
+        <div className="px-4">
+          <h2 className="font-heading text-maroon-900 text-2xl">Shop by Occasion</h2>
+          <p className="text-maroon-600 mt-1 text-sm">
+            Find the right saree for wherever you&apos;re headed
+          </p>
+        </div>
+        <OccasionShowcase />
+      </section>
+      <WhyShopWithUs />
+      <BestSellersCarousel />
       <BrandStory />
       <ContactSignup />
     </main>

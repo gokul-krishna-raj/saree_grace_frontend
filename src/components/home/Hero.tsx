@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/Button";
@@ -25,10 +26,16 @@ export function Hero() {
             Shop the collection
           </Link>
         </div>
-        <div
-          aria-hidden="true"
-          className="from-gold-400/30 via-maroon-600 to-maroon-900 h-40 w-full max-w-sm rounded-lg bg-gradient-to-br sm:h-56 lg:h-72 lg:flex-1"
-        />
+        <div className="from-gold-400/30 via-maroon-600 to-maroon-900 relative h-72 w-full max-w-sm overflow-hidden rounded-lg bg-gradient-to-br sm:h-96 lg:h-[32rem] lg:flex-1">
+          <Image
+            src="/hero-saree-model.png"
+            alt="Model wearing a premium Saree Grace saree"
+            fill
+            priority
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-cover object-top"
+          />
+        </div>
       </div>
     </section>
   );

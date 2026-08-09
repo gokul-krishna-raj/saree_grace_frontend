@@ -6,6 +6,10 @@ export interface ProductListFilters {
   cursor?: string;
   limit?: number;
   category?: string;
+  // Comma-separated occasion ObjectIds (e.g. "<id1>,<id2>") — mirrors `category`'s requirement
+  // of an ObjectId, not a slug, since there's no documented backend contract for this filter
+  // yet (see productFilters.ts); confirm the actual param name/format against the backend.
+  occasion?: string;
   fabric?: string;
   color?: string;
   minPrice?: number;
@@ -14,6 +18,8 @@ export interface ProductListFilters {
   inStockOnly?: boolean;
   sort?: ProductSort;
 }
+
+const DEFAULT_BEST_SELLERS_LIMIT = 10;
 
 export interface ProductListResult {
   products: Product[];
@@ -34,6 +40,7 @@ interface SimpleProductFields {
   name: string;
   description: string;
   category: string;
+  occasions?: string[];
   fabric?: string;
   color?: string;
   isHandloom?: boolean;
@@ -47,6 +54,7 @@ interface VariantShellFields {
   name: string;
   description: string;
   category: string;
+  occasions?: string[];
   fabric?: string;
   color?: string;
   isHandloom?: boolean;
@@ -66,6 +74,7 @@ interface UpdateProductFields {
   name?: string;
   description?: string;
   category?: string;
+  occasions?: string[];
   fabric?: string;
   color?: string;
   isHandloom?: boolean;
@@ -120,6 +129,15 @@ export const productsApi = baseApi.injectEndpoints({
       query: (slug) => `/products/${slug}`,
       transformResponse: (response: ApiSuccess<{ product: Product }>) => response.data.product,
       providesTags: (result) => (result ? [{ type: "Product", id: result._id }] : []),
+    }),
+    // Ranked list, not a cursor page — the backend already orders by sales, so this is returned
+    // and rendered as-is, with no client-side re-sort and no "load more".
+    getBestSellingProducts: builder.query<Product[], { limit?: number } | void>({
+      query: (arg) =>
+        `/products/best-sellers${toQueryString({ limit: arg?.limit ?? DEFAULT_BEST_SELLERS_LIMIT })}`,
+      transformResponse: (response: ApiSuccess<{ products: Product[] }>) => response.data.products,
+      providesTags: (result) =>
+        result?.map((product) => ({ type: "Product" as const, id: product._id })) ?? [],
     }),
     createSimpleProduct: builder.mutation<Product, SimpleProductFields & { images?: File[] }>({
       query: ({ images, ...fields }) => ({
@@ -199,6 +217,7 @@ export const {
   useGetProductsQuery,
   useSearchProductsQuery,
   useGetProductBySlugQuery,
+  useGetBestSellingProductsQuery,
   useCreateSimpleProductMutation,
   useCreateVariantShellProductMutation,
   useAddProductVariantMutation,

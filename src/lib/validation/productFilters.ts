@@ -5,6 +5,7 @@ const SORT_VALUES: ProductSort[] = ["newest", "price_asc", "price_desc", "top_ra
 
 export interface ParsedProductFilters {
   category?: string;
+  occasions?: string[];
   fabric?: string;
   color?: string;
   minPrice?: number;
@@ -25,9 +26,11 @@ export function parseProductFilters(searchParams: URLSearchParams): ParsedProduc
 
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
+  const occasionParam = searchParams.get("occasion");
 
   return {
     category: searchParams.get("category") ?? undefined,
+    occasions: occasionParam ? occasionParam.split(",").filter(Boolean) : undefined,
     fabric: searchParams.get("fabric") ?? undefined,
     color: searchParams.get("color") ?? undefined,
     minPrice: minPrice ? Number(minPrice) : undefined,
@@ -41,6 +44,7 @@ export function parseProductFilters(searchParams: URLSearchParams): ParsedProduc
 export function filtersToSearchParams(filters: ParsedProductFilters): URLSearchParams {
   const params = new URLSearchParams();
   if (filters.category) params.set("category", filters.category);
+  if (filters.occasions?.length) params.set("occasion", filters.occasions.join(","));
   if (filters.fabric) params.set("fabric", filters.fabric);
   if (filters.color) params.set("color", filters.color);
   if (filters.minPrice !== undefined) params.set("minPrice", String(filters.minPrice));
@@ -54,6 +58,7 @@ export function filtersToSearchParams(filters: ParsedProductFilters): URLSearchP
 export function toApiFilters(filters: ParsedProductFilters): ProductListFilters {
   return {
     category: filters.category,
+    occasion: filters.occasions?.length ? filters.occasions.join(",") : undefined,
     fabric: filters.fabric,
     color: filters.color,
     minPrice: filters.minPrice,

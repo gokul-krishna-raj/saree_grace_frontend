@@ -5,11 +5,12 @@ import type { SerializedError } from "@reduxjs/toolkit";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import Image from "next/image";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
 import { ImageDropzone } from "@/components/admin/ImageDropzone";
 import { VariantMiniForm } from "@/components/admin/VariantMiniForm";
 import { Button } from "@/components/ui/Button";
+import { CheckboxGroup } from "@/components/ui/CheckboxGroup";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { getApiErrorMessage } from "@/lib/apiError";
@@ -21,6 +22,7 @@ import {
   simpleProductSchema,
 } from "@/lib/validation/adminProduct";
 import { useGetCategoriesQuery } from "@/store/api/categoriesApi";
+import { useGetOccasionsQuery } from "@/store/api/occasionsApi";
 import {
   useDeleteProductVariantMutation,
   useUpdateProductMutation,
@@ -30,6 +32,12 @@ import type { Product, ProductVariant } from "@/types";
 
 function categoryIdOf(product: Product) {
   return typeof product.category === "string" ? product.category : product.category._id;
+}
+
+function occasionIdsOf(product: Product) {
+  return (product.occasions ?? []).map((occasion) =>
+    typeof occasion === "string" ? occasion : occasion._id,
+  );
 }
 
 function VariantRow({ productId, variant }: { productId: string; variant: ProductVariant }) {
@@ -152,12 +160,14 @@ function EditSimpleProductForm({
   onRemoveImage: (publicId: string) => void;
 }) {
   const { data: categories } = useGetCategoriesQuery(undefined);
+  const { data: occasions } = useGetOccasionsQuery();
   const [updateProduct, { isLoading }] = useUpdateProductMutation();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<SimpleProductFormValues>({
     resolver: zodResolver(simpleProductSchema),
@@ -165,6 +175,7 @@ function EditSimpleProductForm({
       name: product.name,
       description: product.description,
       category: categoryIdOf(product),
+      occasions: occasionIdsOf(product),
       fabric: product.fabric ?? "",
       color: product.color ?? "",
       isHandloom: product.isHandloom,
@@ -209,6 +220,22 @@ function EditSimpleProductForm({
           </option>
         ))}
       </Select>
+      <Controller
+        control={control}
+        name="occasions"
+        render={({ field }) => (
+          <CheckboxGroup
+            label="Occasions (optional)"
+            options={(occasions ?? []).map((occasion) => ({
+              value: occasion._id,
+              label: occasion.name,
+            }))}
+            value={field.value ?? []}
+            onChange={field.onChange}
+            error={errors.occasions?.message}
+          />
+        )}
+      />
       <div className="grid grid-cols-2 gap-3">
         <Input label="Fabric" {...register("fabric")} />
         <Input label="Colour" {...register("color")} />
@@ -281,12 +308,14 @@ function EditVariantBaseForm({
   onRemoveImage: (publicId: string) => void;
 }) {
   const { data: categories } = useGetCategoriesQuery(undefined);
+  const { data: occasions } = useGetOccasionsQuery();
   const [updateProduct, { isLoading }] = useUpdateProductMutation();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<ProductBaseFormValues>({
     resolver: zodResolver(productBaseFieldsSchema),
@@ -294,6 +323,7 @@ function EditVariantBaseForm({
       name: product.name,
       description: product.description,
       category: categoryIdOf(product),
+      occasions: occasionIdsOf(product),
       fabric: product.fabric ?? "",
       color: product.color ?? "",
       isHandloom: product.isHandloom,
@@ -334,6 +364,22 @@ function EditVariantBaseForm({
           </option>
         ))}
       </Select>
+      <Controller
+        control={control}
+        name="occasions"
+        render={({ field }) => (
+          <CheckboxGroup
+            label="Occasions (optional)"
+            options={(occasions ?? []).map((occasion) => ({
+              value: occasion._id,
+              label: occasion.name,
+            }))}
+            value={field.value ?? []}
+            onChange={field.onChange}
+            error={errors.occasions?.message}
+          />
+        )}
+      />
       <div className="grid grid-cols-2 gap-3">
         <Input label="Fabric" {...register("fabric")} />
         <Input label="Colour" {...register("color")} />

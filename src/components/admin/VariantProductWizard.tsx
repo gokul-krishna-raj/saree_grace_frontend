@@ -5,27 +5,31 @@ import type { SerializedError } from "@reduxjs/toolkit";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import Link from "next/link";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
 import { VariantMiniForm } from "@/components/admin/VariantMiniForm";
 import { Button } from "@/components/ui/Button";
+import { CheckboxGroup } from "@/components/ui/CheckboxGroup";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { toast } from "@/lib/toast";
 import { type VariantShellFormValues, variantShellSchema } from "@/lib/validation/adminProduct";
 import { useGetCategoriesQuery } from "@/store/api/categoriesApi";
+import { useGetOccasionsQuery } from "@/store/api/occasionsApi";
 import { useCreateVariantShellProductMutation } from "@/store/api/productsApi";
 import type { Product } from "@/types";
 
 function ShellForm({ onCreated }: { onCreated: (product: Product) => void }) {
   const { data: categories } = useGetCategoriesQuery(undefined);
+  const { data: occasions } = useGetOccasionsQuery();
   const [createShell, { isLoading }] = useCreateVariantShellProductMutation();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<VariantShellFormValues>({
     resolver: zodResolver(variantShellSchema),
@@ -73,6 +77,22 @@ function ShellForm({ onCreated }: { onCreated: (product: Product) => void }) {
           </option>
         ))}
       </Select>
+      <Controller
+        control={control}
+        name="occasions"
+        render={({ field }) => (
+          <CheckboxGroup
+            label="Occasions (optional)"
+            options={(occasions ?? []).map((occasion) => ({
+              value: occasion._id,
+              label: occasion.name,
+            }))}
+            value={field.value ?? []}
+            onChange={field.onChange}
+            error={errors.occasions?.message}
+          />
+        )}
+      />
       <div className="grid grid-cols-2 gap-3">
         <Input label="Fabric" {...register("fabric")} />
         <Input label="Colour" {...register("color")} />

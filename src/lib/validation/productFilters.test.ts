@@ -55,6 +55,7 @@ describe("productFilters URL round-trip", () => {
     const parsed = parseProductFilters(new URLSearchParams("category=cat1&q=silk"));
     expect(toApiFilters(parsed)).toEqual({
       category: "cat1",
+      occasion: undefined,
       fabric: undefined,
       color: undefined,
       minPrice: undefined,
@@ -62,5 +63,26 @@ describe("productFilters URL round-trip", () => {
       handloomOnly: undefined,
       sort: "newest",
     });
+  });
+
+  it("parses a comma-separated occasion param into multiple occasion ids", () => {
+    const params = new URLSearchParams("occasion=occ1,occ2");
+    expect(parseProductFilters(params).occasions).toEqual(["occ1", "occ2"]);
+  });
+
+  it("serializes multiple selected occasions back into a single comma-separated param", () => {
+    const params = filtersToSearchParams({ occasions: ["occ1", "occ2"], sort: "newest" });
+    expect(params.get("occasion")).toBe("occ1,occ2");
+  });
+
+  it("round-trips a multi-occasion selection through parse -> serialize -> parse", () => {
+    const original = parseProductFilters(new URLSearchParams("occasion=occ1,occ2&sort=newest"));
+    const reparsed = parseProductFilters(filtersToSearchParams(original));
+    expect(reparsed).toEqual(original);
+  });
+
+  it("joins selected occasions into a single comma-separated string for the products API", () => {
+    const parsed = parseProductFilters(new URLSearchParams("occasion=occ1,occ2"));
+    expect(toApiFilters(parsed).occasion).toBe("occ1,occ2");
   });
 });

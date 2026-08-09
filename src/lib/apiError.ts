@@ -22,3 +22,13 @@ export function getApiErrorMessage(
 
   return error.message ?? fallback;
 }
+
+// Only FetchBaseQueryError carries the backend's error.code (SerializedError has none) — used
+// to branch on specific error codes (e.g. "EMAIL_NOT_VERIFIED") instead of matching on message.
+export function getApiErrorCode(
+  error: FetchBaseQueryError | SerializedError | undefined,
+): string | undefined {
+  if (!error || !("status" in error)) return undefined;
+  const data = error.data as ApiErrorBody | undefined;
+  return data && data.success === false ? data.error.code : undefined;
+}

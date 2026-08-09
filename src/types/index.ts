@@ -60,6 +60,17 @@ export interface CategoryTreeNode {
   children: CategoryTreeNode[];
 }
 
+export interface Occasion {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: { url: string; publicId: string };
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -67,6 +78,7 @@ export interface Product {
   description: string;
   type: ProductType;
   category: Category | string;
+  occasions?: (Occasion | string)[];
   fabric?: string;
   color?: string;
   isHandloom: boolean;

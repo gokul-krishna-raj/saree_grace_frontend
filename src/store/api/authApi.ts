@@ -22,9 +22,22 @@ export interface RegisterRequest {
   password: string;
 }
 
+export interface RegisterResult {
+  email: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
+}
+
+export interface VerifyOtpRequest {
+  email: string;
+  otp: string;
+}
+
+export interface ResendOtpRequest {
+  email: string;
 }
 
 export interface GoogleAuthRequest {
@@ -68,12 +81,22 @@ async function applyAuthResult(
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    register: builder.mutation<AuthResult, RegisterRequest>({
+    // Deliberately doesn't establish a session (no tokens returned) — the account is unverified
+    // until the OTP step (verifyOtp below) succeeds, which is what actually logs the user in.
+    register: builder.mutation<RegisterResult, RegisterRequest>({
       query: (body) => ({ url: "/auth/register", method: "POST", body }),
+      transformResponse: (response: ApiSuccess<RegisterResult>) => response.data,
+    }),
+    verifyOtp: builder.mutation<AuthResult, VerifyOtpRequest>({
+      query: (body) => ({ url: "/auth/verify-otp", method: "POST", body }),
       transformResponse: (response: ApiSuccess<AuthResult>) => response.data,
       onQueryStarted: async (_arg, { dispatch, getState, queryFulfilled }) => {
         await applyAuthResult(queryFulfilled, dispatch, getState);
       },
+    }),
+    resendOtp: builder.mutation<{ message: string }, ResendOtpRequest>({
+      query: (body) => ({ url: "/auth/resend-otp", method: "POST", body }),
+      transformResponse: (response: ApiSuccess<{ message: string }>) => response.data,
     }),
     login: builder.mutation<AuthResult, LoginRequest>({
       query: (body) => ({ url: "/auth/login", method: "POST", body }),
@@ -130,6 +153,8 @@ export const authApi = baseApi.injectEndpoints({
 
 export const {
   useRegisterMutation,
+  useVerifyOtpMutation,
+  useResendOtpMutation,
   useLoginMutation,
   useGoogleLoginMutation,
   useLogoutMutation,

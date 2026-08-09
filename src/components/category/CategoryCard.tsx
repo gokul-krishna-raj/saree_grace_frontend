@@ -5,8 +5,8 @@ import { cn } from "@/lib/cn";
 import type { Category } from "@/types";
 
 const SIZE_CLASSES = {
-  sm: "h-20 w-20",
-  lg: "h-24 w-24",
+  sm: "h-24 w-24",
+  lg: "h-28 w-28",
 } as const;
 
 interface CategoryCardProps {
@@ -28,7 +28,7 @@ export function CategoryCard({ category, size = "sm", className }: CategoryCardP
         )}
       >
         {category.image?.url ? (
-          <Image src={category.image.url} alt="" fill sizes="96px" className="object-cover" />
+          <Image src={category.image.url} alt="" fill sizes="112px" className="object-cover" />
         ) : (
           <span className="text-maroon-700 font-heading text-xl" aria-hidden="true">
             {category.name.charAt(0).toUpperCase()}

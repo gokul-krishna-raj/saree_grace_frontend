@@ -27,7 +27,7 @@ export function RegisterForm() {
   const onSubmit = async (values: RegisterFormValues) => {
     try {
       await registerUser(values).unwrap();
-      router.push("/");
+      router.push(`/verify-otp?email=${encodeURIComponent(values.email)}`);
     } catch (error) {
       setError("root", {
         message: getApiErrorMessage(error as FetchBaseQueryError | SerializedError),

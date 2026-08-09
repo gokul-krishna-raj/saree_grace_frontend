@@ -14,6 +14,17 @@ export function ProductCard({ product }: { product: Product }) {
   const { isWishlisted, toggle, isLoading } = useWishlistToggle(product._id);
 
   const price = product.type === "simple" ? (product.price ?? 0) : product.startingPrice;
+  // Variant products have no single compareAtPrice — use the active variant priced at
+  // `startingPrice` (the one the card's price actually refers to) as the discount reference.
+  const compareAtPrice =
+    product.type === "simple"
+      ? product.compareAtPrice
+      : (product.variants ?? []).find((variant) => variant.isActive && variant.price === price)
+          ?.compareAtPrice;
+  const hasDiscount = compareAtPrice !== undefined && compareAtPrice > price;
+  const discountPercent = hasDiscount
+    ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
+    : null;
   const primaryImage = product.images.find((image) => image.isPrimary) ?? product.images[0];
   const outOfStock =
     product.type === "simple"
@@ -44,6 +55,11 @@ export function ProductCard({ product }: { product: Product }) {
             Out of stock
           </span>
         ) : null}
+        {hasDiscount ? (
+          <Badge variant="gold" className="absolute top-2 left-2 shadow-sm">
+            {discountPercent}% off
+          </Badge>
+        ) : null}
       </Link>
       <button
         type="button"
@@ -72,10 +88,17 @@ export function ProductCard({ product }: { product: Product }) {
         >
           {product.name}
         </Link>
-        <p className="text-maroon-600 text-sm">
-          {product.type === "variant" ? "From " : ""}
-          {formatPrice(price)}
-        </p>
+        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+          <span className="text-maroon-900 text-sm font-medium">
+            {product.type === "variant" ? "From " : ""}
+            {formatPrice(price)}
+          </span>
+          {hasDiscount ? (
+            <span className="text-maroon-400 text-xs line-through">
+              {formatPrice(compareAtPrice)}
+            </span>
+          ) : null}
+        </div>
       </div>
     </div>
   );
