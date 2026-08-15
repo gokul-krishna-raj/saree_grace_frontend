@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { useCartCount } from "@/hooks/useCartCount";
+import { useWishlistCount } from "@/hooks/useWishlistCount";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setCartDrawerOpen, setMobileMenuOpen } from "@/store/slices/uiSlice";
 
@@ -21,6 +22,7 @@ const NAV_LINKS = [
 export function Header() {
   const dispatch = useAppDispatch();
   const cartCount = useCartCount();
+  const wishlistCount = useWishlistCount();
   const authStatus = useAppSelector((state) => state.auth.status);
   const mobileMenuOpen = useAppSelector((state) => state.ui.mobileMenuOpen);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -85,10 +87,15 @@ export function Header() {
           </button>
           <Link
             href="/wishlist"
-            aria-label="Wishlist"
-            className="text-maroon-700 hover:bg-maroon-50 focus-visible:outline-maroon-600 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+            aria-label={`Wishlist, ${wishlistCount} item${wishlistCount === 1 ? "" : "s"}`}
+            className="text-maroon-700 hover:bg-maroon-50 focus-visible:outline-maroon-600 relative flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <Heart className="h-5 w-5" aria-hidden="true" />
+            {wishlistCount > 0 ? (
+              <span className="bg-gold-500 absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold text-white">
+                {wishlistCount}
+              </span>
+            ) : null}
           </Link>
           <button
             type="button"

@@ -2,6 +2,7 @@
 
 import type { SerializedError } from "@reduxjs/toolkit";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -123,15 +124,34 @@ export default function AdminOrderDetailPage() {
 
       <section className="border-maroon-50 rounded-lg border bg-white p-4">
         <h2 className="font-heading text-maroon-900 mb-2 text-lg">Items</h2>
-        <ul className="text-maroon-700 flex flex-col gap-1 text-sm">
-          {order.items.map((item, index) => (
-            <li key={index} className="flex justify-between">
-              <span>
-                {item.nameSnapshot} × {item.qty}
-              </span>
-              <span>{formatPrice(item.priceSnapshot * item.qty)}</span>
-            </li>
-          ))}
+        <ul className="text-maroon-700 flex flex-col gap-2 text-sm">
+          {order.items.map((item, index) => {
+            const product = typeof item.product === "object" ? item.product : null;
+            return (
+              <li key={index} className="flex items-center gap-3">
+                <div className="bg-maroon-50 relative h-12 w-10 shrink-0 overflow-hidden rounded">
+                  {item.imageSnapshot ? (
+                    <Image
+                      src={item.imageSnapshot}
+                      alt={item.nameSnapshot}
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                    />
+                  ) : null}
+                </div>
+                <div className="flex flex-1 flex-col">
+                  <span>
+                    {item.nameSnapshot} × {item.qty}
+                  </span>
+                  {product?.category?.name ? (
+                    <span className="text-maroon-400 text-xs">{product.category.name}</span>
+                  ) : null}
+                </div>
+                <span>{formatPrice(item.priceSnapshot * item.qty)}</span>
+              </li>
+            );
+          })}
         </ul>
         <p className="border-maroon-100 font-heading text-maroon-900 mt-2 flex justify-between border-t pt-2 text-base">
           <span>Total</span>

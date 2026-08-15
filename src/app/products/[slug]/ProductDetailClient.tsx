@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { AddToCartControls } from "@/components/product/AddToCartControls";
 import { ImageGallery } from "@/components/product/ImageGallery";
+import { ProductDescription } from "@/components/product/ProductDescription";
 import { VariantSelector } from "@/components/product/VariantSelector";
 import { Badge } from "@/components/ui/Badge";
 import { useWishlistToggle } from "@/hooks/useWishlistToggle";
@@ -113,7 +114,7 @@ export function ProductDetailClient({ product }: { product: Product }) {
           requiresVariantSelection={requiresVariantSelection}
         />
 
-        <p className="text-maroon-700 leading-relaxed">{product.description}</p>
+        <ProductDescription description={product.description} />
 
         {occasions.length > 0 ? (
           <div>

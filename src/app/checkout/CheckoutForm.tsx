@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { SerializedError } from "@reduxjs/toolkit";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
+import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import { useState } from "react";
@@ -11,15 +12,18 @@ import { useForm } from "react-hook-form";
 import { CartSummary } from "@/components/cart/CartSummary";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { useCart } from "@/hooks/useCart";
 import { useRazorpayCheckout } from "@/hooks/useRazorpayCheckout";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { cn } from "@/lib/cn";
+import { INDIAN_STATES } from "@/lib/indianStates";
+import { getShippingFeeForState } from "@/lib/shippingFee";
 import { type AddressFormValues, addressSchema } from "@/lib/validation/checkout";
 import { useCreateOrderMutation } from "@/store/api/ordersApi";
 
 export function CheckoutForm() {
-  const { lines, itemsTotal, shippingFee, total, isEmpty } = useCart();
+  const { lines, itemsTotal, shippingFee: estimatedShippingFee, isEmpty } = useCart();
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const { payForOrder, isProcessing } = useRazorpayCheckout();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,11 +32,19 @@ export function CheckoutForm() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
     defaultValues: { country: "India" },
   });
+
+  // Shipping is state-tiered (order.service.ts on the backend) but the state is only known once
+  // the shopper picks it here — before that, fall back to the cart's flat/free estimate so the
+  // summary isn't blank on first render.
+  const selectedState = watch("state");
+  const shippingFee = selectedState ? getShippingFeeForState(selectedState) : estimatedShippingFee;
+  const total = itemsTotal + shippingFee;
 
   if (isEmpty) {
     return (
@@ -101,12 +113,22 @@ export function CheckoutForm() {
               error={errors.city?.message}
               {...register("city")}
             />
-            <Input
+            <Select
               label="State"
               autoComplete="address-level1"
               error={errors.state?.message}
+              defaultValue=""
               {...register("state")}
-            />
+            >
+              <option value="" disabled>
+                Select a state
+              </option>
+              {INDIAN_STATES.map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </Select>
           </div>
           <Input
             label="Postal code"
@@ -119,10 +141,21 @@ export function CheckoutForm() {
 
         <section className="border-maroon-50 flex flex-col gap-3 rounded-lg border bg-white p-4">
           <h2 className="font-heading text-maroon-900 text-lg">Order summary</h2>
-          <ul className="text-maroon-700 flex flex-col gap-1 text-sm">
+          <ul className="text-maroon-700 flex flex-col gap-2 text-sm">
             {lines.map((line) => (
-              <li key={line.id} className="flex justify-between">
-                <span className="line-clamp-1">
+              <li key={line.id} className="flex items-center gap-3">
+                <div className="bg-maroon-50 relative h-12 w-10 shrink-0 overflow-hidden rounded">
+                  {line.image ? (
+                    <Image
+                      src={line.image}
+                      alt={line.name}
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                    />
+                  ) : null}
+                </div>
+                <span className="line-clamp-1 flex-1">
                   {line.name} × {line.qty}
                 </span>
               </li>

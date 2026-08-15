@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useCartCount } from "@/hooks/useCartCount";
+import { useWishlistCount } from "@/hooks/useWishlistCount";
 import { cn } from "@/lib/cn";
 import { useAppSelector } from "@/store/hooks";
 
@@ -15,6 +16,7 @@ import { useAppSelector } from "@/store/hooks";
 export function MobileBottomNav() {
   const pathname = usePathname();
   const cartCount = useCartCount();
+  const wishlistCount = useWishlistCount();
   const authStatus = useAppSelector((state) => state.auth.status);
 
   // The admin area is desktop-first by design (checklist Section 12) and has its own nav
@@ -24,8 +26,8 @@ export function MobileBottomNav() {
   const items = [
     { href: "/", label: "Home", icon: Home },
     { href: "/products", label: "Shop", icon: LayoutGrid },
-    { href: "/wishlist", label: "Wishlist", icon: Heart },
-    { href: "/cart", label: "Cart", icon: ShoppingBag, showCartBadge: true },
+    { href: "/wishlist", label: "Wishlist", icon: Heart, count: wishlistCount },
+    { href: "/cart", label: "Cart", icon: ShoppingBag, count: cartCount },
     { href: authStatus === "authenticated" ? "/account" : "/login", label: "Account", icon: User },
   ];
 
@@ -35,7 +37,7 @@ export function MobileBottomNav() {
       className="border-maroon-100 fixed inset-x-0 bottom-0 z-30 flex border-t bg-white lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      {items.map(({ href, label, icon: Icon, showCartBadge }) => {
+      {items.map(({ href, label, icon: Icon, count }) => {
         const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
         return (
           <Link
@@ -49,9 +51,9 @@ export function MobileBottomNav() {
           >
             <Icon className="h-5 w-5" aria-hidden="true" />
             {label}
-            {showCartBadge && cartCount > 0 ? (
+            {count && count > 0 ? (
               <span className="bg-gold-500 absolute top-1 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold text-white">
-                {cartCount}
+                {count}
               </span>
             ) : null}
           </Link>

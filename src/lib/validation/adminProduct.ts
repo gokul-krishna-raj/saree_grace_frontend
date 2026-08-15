@@ -16,7 +16,7 @@ export const productBaseFieldsSchema = z.object({
   occasions: z.array(z.string()).optional(),
   fabric: z.string().trim().max(100).optional(),
   color: z.string().trim().max(100).optional(),
-  isHandloom: z.boolean(),
+  isHandloom: z.boolean().optional(),
 });
 export type ProductBaseFormValues = z.infer<typeof productBaseFieldsSchema>;
 

@@ -42,3 +42,35 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Sanitized HTML product descriptions (ProductDescription.tsx) — Tailwind utility classes can't
+   target these tags directly since the markup comes from dangerouslySetInnerHTML. */
+.description-content p {
+  margin-bottom: 1rem;
+}
+
+.description-content ul,
+.description-content ol {
+  margin: 0 0 1rem 1.25rem;
+}
+
+.description-content ul {
+  list-style: disc;
+}
+
+.description-content ol {
+  list-style: decimal;
+}
+
+.description-content li {
+  margin-bottom: 0.25rem;
+}
+
+.description-content a {
+  color: var(--color-maroon-900);
+  text-decoration: underline;
+}
+
+.description-content > :last-child {
+  margin-bottom: 0;
+}

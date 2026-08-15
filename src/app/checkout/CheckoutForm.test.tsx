@@ -36,7 +36,7 @@ async function fillValidAddress() {
   await userEvent.type(screen.getByLabelText("Phone"), "9876543210");
   await userEvent.type(screen.getByLabelText("Address line 1"), "123 Test Street");
   await userEvent.type(screen.getByLabelText("City"), "Chennai");
-  await userEvent.type(screen.getByLabelText("State"), "Tamil Nadu");
+  await userEvent.selectOptions(screen.getByLabelText("State"), "Tamil Nadu");
   await userEvent.type(screen.getByLabelText("Postal code"), "600001");
 }
 

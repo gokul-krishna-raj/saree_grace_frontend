@@ -159,8 +159,19 @@ export interface OrderStatusHistoryEntry {
   changedBy?: string;
 }
 
+// Populated only on the admin order-detail endpoint (GET /admin/orders/:id) — `select('name
+// category type')` with `category` nested-populated to `{_id, name}`. `null` when the source
+// product has since been deleted. Every other order endpoint leaves `OrderItem.product` a
+// plain id string, same as `CartItem.product`.
+export interface OrderItemProductSummary {
+  _id: string;
+  name: string;
+  type: "simple" | "variant";
+  category: { _id: string; name: string } | null;
+}
+
 export interface OrderItem {
-  product: string;
+  product: string | OrderItemProductSummary | null;
   variantId?: string | null;
   nameSnapshot: string;
   imageSnapshot?: string;
