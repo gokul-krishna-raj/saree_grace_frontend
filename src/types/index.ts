@@ -87,6 +87,14 @@ export interface Product {
   reviewCount: number;
   isActive: boolean;
   startingPrice: number;
+  // Mongoose virtuals, same as `startingPrice` (see the comment on
+  // `WishlistProductSummary` below) — always populated regardless of field
+  // selection. For a simple product these mirror `price`/`stock` and
+  // `variantCount` is 0; for a variant product they're computed across
+  // active variants only.
+  maxPrice: number;
+  totalStock: number;
+  variantCount: number;
   createdAt: string;
   updatedAt: string;
   // simple-only

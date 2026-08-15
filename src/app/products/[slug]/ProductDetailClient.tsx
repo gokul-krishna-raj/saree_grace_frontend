@@ -11,12 +11,15 @@ import { Badge } from "@/components/ui/Badge";
 import { useWishlistToggle } from "@/hooks/useWishlistToggle";
 import { trackViewItem } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
+import { selectableAttributeNames } from "@/lib/colorCode";
 import { formatPrice } from "@/lib/formatPrice";
 import { applySelection, findMatchingVariant, getDefaultSelection } from "@/lib/variantSelection";
 import type { Occasion, Product } from "@/types";
 
 export function ProductDetailClient({ product }: { product: Product }) {
-  const attributeNames = product.variantAttributeNames ?? [];
+  // "colorCode" (when an admin included it in variantAttributeNames) is metadata for a swatch,
+  // not a dimension a shopper picks — excluded here so selection/matching never requires it.
+  const attributeNames = selectableAttributeNames(product.variantAttributeNames ?? []);
   const variants = product.variants ?? [];
   // Only entries the API actually populated (not just an ObjectId string) can be shown —
   // rendering a raw id would be a meaningless label and a broken link.

@@ -14,6 +14,7 @@ import { CheckboxGroup } from "@/components/ui/CheckboxGroup";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { getApiErrorMessage } from "@/lib/apiError";
+import { isColorCodeAttribute, isValidHexColor } from "@/lib/colorCode";
 import { toast } from "@/lib/toast";
 import {
   productBaseFieldsSchema,
@@ -45,14 +46,24 @@ function VariantRow({ productId, variant }: { productId: string; variant: Produc
   const [deleteVariant, { isLoading: isDeleting }] = useDeleteProductVariantMutation();
   const [price, setPrice] = useState(String(variant.price));
   const [stock, setStock] = useState(String(variant.stock));
+  const [attributes, setAttributes] = useState<Record<string, string>>(variant.attributes);
+
+  const colorCodeAttrName = Object.keys(attributes).find((key) => isColorCodeAttribute(key));
+  const colorCodeValue = colorCodeAttrName ? (attributes[colorCodeAttrName] ?? "") : "";
+  const colorCodeError =
+    colorCodeAttrName && colorCodeValue.trim() && !isValidHexColor(colorCodeValue.trim())
+      ? "Must be a valid hex color, e.g. #800000"
+      : undefined;
 
   async function handleSave() {
+    if (colorCodeError) return;
     try {
       await updateVariant({
         productId,
         variantId: variant._id,
         price: Number(price),
         stock: Number(stock),
+        attributes,
       }).unwrap();
       toast.success("Variant updated");
     } catch (error) {
@@ -72,13 +83,51 @@ function VariantRow({ productId, variant }: { productId: string; variant: Produc
 
   return (
     <div className="border-maroon-50 flex flex-wrap items-end gap-3 rounded-lg border p-3">
-      <div className="text-maroon-700 text-sm">
-        <p className="text-maroon-900 font-medium">{variant.sku}</p>
-        <p>
-          {Object.entries(variant.attributes)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join(", ")}
-        </p>
+      <div className="flex flex-col gap-1.5">
+        <p className="text-maroon-900 text-sm font-medium">{variant.sku}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          {Object.keys(attributes)
+            .filter((key) => !isColorCodeAttribute(key))
+            .map((key) => (
+              <label key={key} className="text-maroon-700 flex items-center gap-1.5 text-sm">
+                <span className="font-medium">{key.charAt(0).toUpperCase() + key.slice(1)}:</span>
+                <input
+                  value={attributes[key] ?? ""}
+                  onChange={(event) =>
+                    setAttributes((prev) => ({ ...prev, [key]: event.target.value }))
+                  }
+                  className="border-maroon-100 w-28 rounded border px-2 py-1 text-sm"
+                />
+              </label>
+            ))}
+          {colorCodeAttrName ? (
+            <div className="text-maroon-700 flex items-center gap-1.5 text-sm">
+              <span className="font-medium">Color code:</span>
+              <input
+                type="color"
+                aria-label="Pick color"
+                value={/^#[0-9A-Fa-f]{6}$/.test(colorCodeValue) ? colorCodeValue : "#000000"}
+                onChange={(event) =>
+                  setAttributes((prev) => ({ ...prev, [colorCodeAttrName]: event.target.value }))
+                }
+                className="border-maroon-100 h-8 w-8 shrink-0 cursor-pointer rounded border p-0.5"
+              />
+              <input
+                value={colorCodeValue}
+                placeholder="#800000"
+                onChange={(event) =>
+                  setAttributes((prev) => ({ ...prev, [colorCodeAttrName]: event.target.value }))
+                }
+                className="border-maroon-100 w-24 rounded border px-2 py-1 text-sm"
+              />
+              {colorCodeError ? (
+                <span role="alert" className="text-xs text-red-600">
+                  {colorCodeError}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
       <Input
         label="Price"
@@ -96,7 +145,12 @@ function VariantRow({ productId, variant }: { productId: string; variant: Produc
         onChange={(event) => setStock(event.target.value)}
         className="w-24"
       />
-      <Button variant="secondary" onClick={handleSave} isLoading={isSaving} disabled={isSaving}>
+      <Button
+        variant="secondary"
+        onClick={handleSave}
+        isLoading={isSaving}
+        disabled={isSaving || Boolean(colorCodeError)}
+      >
         Save
       </Button>
       <Button variant="ghost" onClick={handleDelete} isLoading={isDeleting} disabled={isDeleting}>
@@ -240,14 +294,14 @@ function EditSimpleProductForm({
         <Input label="Fabric" {...register("fabric")} />
         <Input label="Colour" {...register("color")} />
       </div>
-      <label className="text-maroon-800 flex items-center gap-2 text-sm">
+      {/* <label className="text-maroon-800 flex items-center gap-2 text-sm">
         <input
           type="checkbox"
           {...register("isHandloom")}
           className="border-maroon-200 h-5 w-5 rounded"
         />
         This is a handloom product
-      </label>
+      </label> */}
       <div className="grid grid-cols-2 gap-3">
         <Input
           label="Price (₹)"
@@ -384,14 +438,14 @@ function EditVariantBaseForm({
         <Input label="Fabric" {...register("fabric")} />
         <Input label="Colour" {...register("color")} />
       </div>
-      <label className="text-maroon-800 flex items-center gap-2 text-sm">
+      {/* <label className="text-maroon-800 flex items-center gap-2 text-sm">
         <input
           type="checkbox"
           {...register("isHandloom")}
           className="border-maroon-200 h-5 w-5 rounded"
         />
         This is a handloom product
-      </label>
+      </label> */}
       <CurrentImages
         images={product.images}
         removedImageIds={removedImageIds}

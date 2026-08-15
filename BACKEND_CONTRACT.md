@@ -59,10 +59,13 @@ model — see "Missing endpoints" below.
 - `GET /products/:slug` → `{product}` (404 if inactive/missing)
 - `GET /products/:id/reviews?cursor&limit` → `{reviews}` (approved only)
 
-`Product`: `{_id, name, slug, description, type:'simple'|'variant', category, fabric?, color?, isHandloom, images:[{url,publicId,isPrimary}], ratingAvg, reviewCount, isActive, startingPrice}`
+`Product`: `{_id, name, slug, description, type:'simple'|'variant', category, fabric?, color?, isHandloom, images:[{url,publicId,isPrimary}], ratingAvg, reviewCount, isActive, startingPrice, maxPrice, totalStock, variantCount}`
 
-- simple: `+ price, compareAtPrice?, stock, sku?`
+- simple: `+ price, compareAtPrice?, stock, sku?` — `maxPrice` mirrors `price`, `totalStock` mirrors `stock`, `variantCount` is always `0`.
 - variant: `+ variantAttributeNames: string[], variants: [{_id, sku, attributes: Record<string,string>, price, compareAtPrice?, stock, images, isActive}]`
+  - `startingPrice`/`maxPrice`/`totalStock`/`variantCount` are computed across **active variants only** (`min`/`max` of `price`, `sum` of `stock`, `count`).
+  - `attributes` is a free-form key/value bag — an admin can include a `colorCode` key (validated server-side as a hex string, `^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$`, 400 on a malformed value) purely so a `color` value gets a swatch. It's metadata, not a pickable dimension — `colorCode` should never appear as its own row in a variant picker UI, and should be excluded from whatever attribute set drives variant matching (see `src/lib/colorCode.ts`'s `selectableAttributeNames`).
+  - Adding/updating a variant to attributes that exactly match another variant already on the same product (same key/value pairs) → 409, same as a duplicate SKU.
 
 Admin (all require admin):
 

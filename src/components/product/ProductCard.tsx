@@ -14,6 +14,10 @@ export function ProductCard({ product }: { product: Product }) {
   const { isWishlisted, toggle, isLoading } = useWishlistToggle(product._id);
 
   const price = product.type === "simple" ? (product.price ?? 0) : product.startingPrice;
+  // A variant product spans a price range across its active variants — show it as a range
+  // rather than "From <min>" once there's an actual spread to communicate (maxPrice/startingPrice
+  // are Mongoose virtuals always present on Product, see types/index.ts).
+  const isPriceRange = product.type === "variant" && product.maxPrice > product.startingPrice;
   // Variant products have no single compareAtPrice — use the active variant priced at
   // `startingPrice` (the one the card's price actually refers to) as the discount reference.
   const compareAtPrice =
@@ -90,8 +94,9 @@ export function ProductCard({ product }: { product: Product }) {
         </Link>
         <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
           <span className="text-maroon-900 text-sm font-medium">
-            {product.type === "variant" ? "From " : ""}
-            {formatPrice(price)}
+            {isPriceRange
+              ? `${formatPrice(product.startingPrice)} – ${formatPrice(product.maxPrice)}`
+              : `${product.type === "variant" ? "From " : ""}${formatPrice(price)}`}
           </span>
           {hasDiscount ? (
             <span className="text-maroon-400 text-xs line-through">
@@ -99,6 +104,9 @@ export function ProductCard({ product }: { product: Product }) {
             </span>
           ) : null}
         </div>
+        {product.type === "variant" && product.variantCount > 1 ? (
+          <span className="text-maroon-600 text-xs">{product.variantCount} options</span>
+        ) : null}
       </div>
     </div>
   );

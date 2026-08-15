@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonVariants } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatPrice } from "@/lib/formatPrice";
 import { toast } from "@/lib/toast";
@@ -45,13 +45,13 @@ export default function AdminProductsPage() {
         <div className="flex gap-2">
           <Link
             href="/admin/products/new?type=simple"
-            className="text-maroon-700 text-sm font-medium underline"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
             New simple product
           </Link>
           <Link
             href="/admin/products/new?type=variant"
-            className="text-maroon-700 text-sm font-medium underline"
+            className={buttonVariants({ variant: "primary", size: "sm" })}
           >
             New variant product
           </Link>

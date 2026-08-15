@@ -92,14 +92,14 @@ export function SimpleProductForm() {
         <Input label="Fabric" {...register("fabric")} />
         <Input label="Colour" {...register("color")} />
       </div>
-      <label className="text-maroon-800 flex items-center gap-2 text-sm">
+      {/* <label className="text-maroon-800 flex items-center gap-2 text-sm">
         <input
           type="checkbox"
           {...register("isHandloom")}
           className="border-maroon-200 h-5 w-5 rounded"
         />
         This is a handloom product
-      </label>
+      </label> */}
       <div className="grid grid-cols-2 gap-3">
         <Input
           label="Price (₹)"
