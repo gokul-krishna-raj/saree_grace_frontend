@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { getProductAllImages, getProductPrimaryImage } from "@/lib/productImage";
 import { serverFetch } from "@/lib/serverApi";
 import type { Product } from "@/types";
 
@@ -34,7 +35,8 @@ export async function generateMetadata({
 
   const title = sanitizeSeoText(product.name);
   const description = sanitizeSeoText(product.description.slice(0, 160));
-  const image = product.images[0]?.url;
+  const primaryImage = getProductPrimaryImage(product);
+  const image = primaryImage?.url;
 
   return {
     title,
@@ -61,13 +63,14 @@ export default async function ProductDetailPage({ params }: PageProps<"/products
 
   const categoryId = typeof product.category === "string" ? product.category : product.category._id;
   const price = product.type === "simple" ? (product.price ?? 0) : product.startingPrice;
+  const allImages = getProductAllImages(product);
 
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: sanitizeSeoText(product.name),
     description: sanitizeSeoText(product.description),
-    image: product.images.map((image) => image.url),
+    image: allImages.map((img) => img.url),
     offers: {
       "@type": "Offer",
       price,

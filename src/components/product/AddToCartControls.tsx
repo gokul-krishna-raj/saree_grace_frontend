@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { trackAddToCart } from "@/lib/analytics";
 import { getApiErrorMessage } from "@/lib/apiError";
+import { getProductPrimaryImage } from "@/lib/productImage";
 import { toast } from "@/lib/toast";
 import { useAddCartItemMutation } from "@/store/api/cartApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -19,28 +20,21 @@ import type { Product, ProductVariant } from "@/types";
 export function AddToCartControls({
   product,
   variant,
-  requiresVariantSelection,
+  requiresVariantSelection = false,
 }: {
   product: Product;
   variant?: ProductVariant;
-  requiresVariantSelection: boolean;
+  requiresVariantSelection?: boolean;
 }) {
-  const [qty, setQty] = useState(1);
+  const dispatch = useAppDispatch();
   const authStatus = useAppSelector((state) => state.auth.status);
   const isAuthenticated = authStatus === "authenticated";
-  // On a hard navigation/reload, the store resets (accessToken is memory-only by design — see
-  // CLAUDE_FRONTEND.md) and AuthBootstrap's silent refresh takes a real round trip to confirm a
-  // returning user is actually logged in — status is "checking" during that window, not yet
-  // "authenticated". Found via a real Playwright E2E run, not theorized: without this
-  // distinction, a genuinely logged-in user who clicks "Add to cart" during that window gets
-  // silently misrouted to the local guest cart instead of their server cart, because
-  // `!isAuthenticated` was true for "checking" exactly the same as it is for a real guest.
   const isAuthPending = authStatus === "checking";
-  const dispatch = useAppDispatch();
   const [addCartItem, { isLoading }] = useAddCartItemMutation();
+  const [qty, setQty] = useState(1);
 
-  const stock = product.type === "variant" ? (variant?.stock ?? 0) : (product.stock ?? 0);
   const price = product.type === "variant" ? variant?.price : product.price;
+  const stock = product.type === "variant" ? (variant?.stock ?? 0) : (product.stock ?? 0);
   const needsSelection = product.type === "variant" && requiresVariantSelection;
   // Stock is only meaningful once we know which variant we're checking — with no variant
   // selected yet, "stock" is 0 by default, but that's "unknown," not "out of stock."
@@ -51,6 +45,8 @@ export function AddToCartControls({
     if (product.type === "variant" && !variant) return;
     if (isAuthPending) return;
 
+    const primaryImg = variant?.images?.[0] ?? getProductPrimaryImage(product);
+
     if (!isAuthenticated) {
       dispatch(
         guestItemAdded({
@@ -58,7 +54,7 @@ export function AddToCartControls({
           variantId: variant?._id ?? null,
           qty,
           nameSnapshot: product.name,
-          imageSnapshot: (variant?.images[0] ?? product.images[0])?.url,
+          imageSnapshot: primaryImg?.url,
           priceSnapshot: price ?? 0,
         }),
       );

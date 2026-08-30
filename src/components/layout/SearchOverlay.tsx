@@ -9,6 +9,8 @@ import { createPortal } from "react-dom";
 
 import { Input } from "@/components/ui/Input";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { formatPrice } from "@/lib/formatPrice";
+import { getProductPrimaryImage } from "@/lib/productImage";
 import { useSearchProductsQuery } from "@/store/api/productsApi";
 
 interface SearchOverlayProps {
@@ -115,7 +117,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
           <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
             <button
               type="submit"
-              className="bg-maroon-900 hover:bg-maroon-800 focus-visible:outline-maroon-600 inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="bg-maroon-900 hover:bg-maroon-800 focus-visible:outline-maroon-600 inline-flex h-11 items-center justify-center rounded-lg border border-transparent px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               Search
             </button>
@@ -144,33 +146,38 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
               </div>
             ) : (
               <ul className="grid gap-3">
-                {results.map((product) => (
-                  <li key={product._id}>
-                    <Link
-                      href={`/products/${product.slug}`}
-                      onClick={onClose}
-                      className="group border-maroon-100 hover:border-maroon-300 hover:bg-maroon-50 flex items-center gap-4 rounded-3xl border p-3 text-left"
-                    >
-                      <div className="bg-maroon-50 relative h-16 w-16 overflow-hidden rounded-2xl">
-                        {product.images[0]?.url ? (
-                          <Image
-                            src={product.images[0].url}
-                            alt={product.name}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : null}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-maroon-900 truncate font-medium">{product.name}</p>
-                        <p className="text-maroon-600 truncate text-sm">{product.fabric ?? ""}</p>
-                      </div>
-                      <span className="text-maroon-900 text-sm font-semibold">
-                        ₹{product.price?.toLocaleString()}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+                {results.map((product) => {
+                  const image = getProductPrimaryImage(product);
+                  const displayPrice =
+                    product.type === "variant" ? product.startingPrice : (product.price ?? 0);
+                  return (
+                    <li key={product._id}>
+                      <Link
+                        href={`/products/${product.slug}`}
+                        onClick={onClose}
+                        className="group border-maroon-100 hover:border-maroon-300 hover:bg-maroon-50 flex items-center gap-4 rounded-3xl border p-3 text-left"
+                      >
+                        <div className="bg-maroon-50 relative h-16 w-16 overflow-hidden rounded-2xl">
+                          {image?.url ? (
+                            <Image
+                              src={image.url}
+                              alt={product.name}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-maroon-900 truncate font-medium">{product.name}</p>
+                          <p className="text-maroon-600 truncate text-sm">{product.fabric ?? ""}</p>
+                        </div>
+                        <span className="text-maroon-900 text-sm font-semibold">
+                          {formatPrice(displayPrice)}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             )
           ) : (

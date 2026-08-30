@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { getColorCodeValue } from "@/lib/colorCode";
+import { getColorCodeValue, isColorAttribute } from "@/lib/colorCode";
 import { type AttributeSelection, getAvailableValues } from "@/lib/variantSelection";
 import type { ProductVariant } from "@/types";
 
@@ -13,7 +13,7 @@ function swatchFor(
   attributeName: string,
   value: string,
 ): string | undefined {
-  if (attributeName.trim().toLowerCase() !== "color") return undefined;
+  if (!isColorAttribute(attributeName)) return undefined;
   const match = variants.find((variant) => variant.attributes[attributeName] === value);
   return match ? getColorCodeValue(match.attributes) : undefined;
 }

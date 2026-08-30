@@ -120,4 +120,72 @@ describe("ProductCard", () => {
 
     expect(screen.getByRole("button", { name: /remove .* from wishlist/i })).toBeInTheDocument();
   });
+
+  it("renders color swatches and switches variant images on click without duplicates", async () => {
+    const variantProduct: Product = {
+      ...simpleProduct,
+      type: "variant",
+      price: undefined,
+      stock: undefined,
+      startingPrice: 3000,
+      maxPrice: 3500,
+      totalStock: 10,
+      variantCount: 3,
+      variants: [
+        {
+          _id: "v-red-s",
+          sku: "SKU-RED-S",
+          attributes: { color: "Red", colorCode: "#ff0000", size: "S" },
+          price: 3000,
+          stock: 5,
+          images: [{ url: "https://example.com/red.jpg", publicId: "img-red", isPrimary: true }],
+          isActive: true,
+        },
+        {
+          _id: "v-red-m",
+          sku: "SKU-RED-M",
+          attributes: { color: "Red", colorCode: "#ff0000", size: "M" },
+          price: 3000,
+          stock: 3,
+          images: [{ url: "https://example.com/red.jpg", publicId: "img-red", isPrimary: true }],
+          isActive: true,
+        },
+        {
+          _id: "v-blue",
+          sku: "SKU-BLUE",
+          attributes: { color: "Blue", colorCode: "#0000ff" },
+          price: 3500,
+          stock: 2,
+          images: [{ url: "https://example.com/blue.jpg", publicId: "img-blue", isPrimary: true }],
+          isActive: true,
+        },
+      ],
+    };
+
+    render(<ProductCard product={variantProduct} />);
+
+    // 2 unique colors should be rendered ("Red" and "Blue"), ignoring duplicate "Red"
+    const redButton = screen.getByRole("button", { name: "Select Red" });
+    const blueButton = screen.getByRole("button", { name: "Select Blue" });
+    expect(redButton).toBeInTheDocument();
+    expect(blueButton).toBeInTheDocument();
+    expect(screen.getByText("2 colors")).toBeInTheDocument();
+
+    const redSwatch = redButton.querySelector("span[aria-hidden='true']");
+    expect(redSwatch).toHaveStyle({ backgroundColor: "#ff0000" });
+
+    const blueSwatch = blueButton.querySelector("span[aria-hidden='true']");
+    expect(blueSwatch).toHaveStyle({ backgroundColor: "#0000ff" });
+
+    // Click blue swatch to switch image
+    await userEvent.click(blueButton);
+    expect(blueButton).toHaveAttribute("aria-pressed", "true");
+    const image = screen.getByAltText(variantProduct.name);
+    expect(image).toHaveAttribute("src", expect.stringContaining("blue.jpg"));
+  });
+
+  it("does not render color swatches for simple products", () => {
+    render(<ProductCard product={simpleProduct} />);
+    expect(screen.queryByRole("button", { name: /^Select /i })).not.toBeInTheDocument();
+  });
 });

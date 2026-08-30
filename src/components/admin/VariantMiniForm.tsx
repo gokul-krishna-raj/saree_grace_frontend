@@ -11,7 +11,7 @@ import { ImageDropzone } from "@/components/admin/ImageDropzone";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { getApiErrorMessage } from "@/lib/apiError";
-import { isColorCodeAttribute, isValidHexColor } from "@/lib/colorCode";
+import { isColorAttribute, isColorCodeAttribute, isValidHexColor } from "@/lib/colorCode";
 import { toast } from "@/lib/toast";
 import { type VariantFormValues, variantSchema } from "@/lib/validation/adminProduct";
 import { useAddProductVariantMutation } from "@/store/api/productsApi";
@@ -39,13 +39,18 @@ export function VariantMiniForm({
     formState: { errors },
   } = useForm<VariantFormValues>({ resolver: zodResolver(variantSchema) });
 
-  const missingAttributes = attributeNames.filter((name) => !attributes[name]?.trim());
-  const colorCodeAttrName = attributeNames.find((name) => isColorCodeAttribute(name));
+  const colorAttrName = attributeNames.find((name) => isColorAttribute(name));
+  const explicitColorCodeName = attributeNames.find((name) => isColorCodeAttribute(name));
+  const colorCodeAttrName = explicitColorCodeName ?? (colorAttrName ? "colorCode" : undefined);
   const colorCodeValue = colorCodeAttrName ? (attributes[colorCodeAttrName] ?? "") : "";
   const colorCodeError =
     colorCodeAttrName && colorCodeValue.trim() && !isValidHexColor(colorCodeValue.trim())
       ? "Must be a valid hex color, e.g. #800000"
       : undefined;
+
+  const missingAttributes = attributeNames.filter(
+    (name) => !isColorCodeAttribute(name) && !attributes[name]?.trim(),
+  );
 
   async function onSubmit(values: VariantFormValues) {
     setSubmitError(null);
@@ -57,7 +62,15 @@ export function VariantMiniForm({
     // `error={colorCodeError}`, same as every other field's zod error.
     if (colorCodeError) return;
     try {
-      await addProductVariant({ productId, variant: { ...values, attributes }, images }).unwrap();
+      const finalAttributes = { ...attributes };
+      if (colorCodeAttrName && colorCodeValue.trim()) {
+        finalAttributes[colorCodeAttrName] = colorCodeValue.trim();
+      }
+      await addProductVariant({
+        productId,
+        variant: { ...values, attributes: finalAttributes },
+        images,
+      }).unwrap();
       toast.success("Variant added");
       reset();
       setAttributes(Object.fromEntries(attributeNames.map((name) => [name, ""])));
@@ -75,9 +88,65 @@ export function VariantMiniForm({
       className="border-maroon-100 flex flex-col gap-4 rounded-lg border p-4"
     >
       <div className="grid grid-cols-2 gap-3">
-        {attributeNames.map((name) => {
-          const value = attributes[name] ?? "";
-          if (!isColorCodeAttribute(name)) {
+        {attributeNames
+          .filter((name) => !isColorCodeAttribute(name))
+          .map((name) => {
+            const value = attributes[name] ?? "";
+            const isColor = isColorAttribute(name);
+
+            if (isColor) {
+              const swatchValue = isValidHexColor(colorCodeValue) ? colorCodeValue : "#800000";
+              return (
+                <div key={name} className="col-span-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Input
+                    label={name.charAt(0).toUpperCase() + name.slice(1)}
+                    value={value}
+                    onChange={(event) =>
+                      setAttributes((prev) => ({ ...prev, [name]: event.target.value }))
+                    }
+                  />
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-maroon-900 text-sm font-medium">Color code</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        aria-label="Pick color"
+                        value={swatchValue}
+                        onChange={(event) =>
+                          setAttributes((prev) => ({
+                            ...prev,
+                            [colorCodeAttrName || "colorCode"]: event.target.value,
+                          }))
+                        }
+                        className="border-maroon-100 h-11 w-11 shrink-0 cursor-pointer rounded-lg border p-1"
+                      />
+                      <ImageColorPicker
+                        images={images}
+                        onPick={(hex) =>
+                          setAttributes((prev) => ({
+                            ...prev,
+                            [colorCodeAttrName || "colorCode"]: hex,
+                          }))
+                        }
+                      />
+                      <Input
+                        value={colorCodeValue}
+                        placeholder="#800000"
+                        error={colorCodeError}
+                        onChange={(event) =>
+                          setAttributes((prev) => ({
+                            ...prev,
+                            [colorCodeAttrName || "colorCode"]: event.target.value,
+                          }))
+                        }
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <Input
                 key={name}
@@ -88,40 +157,48 @@ export function VariantMiniForm({
                 }
               />
             );
-          }
-          // "colorCode" is a hex swatch, not free text — a native color input pairs with the
-          // text field so an admin can either pick visually or paste an exact hex value.
-          const swatchValue = /^#[0-9A-Fa-f]{6}$/.test(value) ? value : "#000000";
-          return (
-            <div key={name} className="flex flex-col gap-1.5">
-              <span className="text-maroon-900 text-sm font-medium">Color code</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  aria-label="Pick color"
-                  value={swatchValue}
-                  onChange={(event) =>
-                    setAttributes((prev) => ({ ...prev, [name]: event.target.value }))
-                  }
-                  className="border-maroon-100 h-11 w-11 shrink-0 cursor-pointer rounded-lg border p-1"
-                />
-                <ImageColorPicker
-                  images={images}
-                  onPick={(hex) => setAttributes((prev) => ({ ...prev, [name]: hex }))}
-                />
-                <Input
-                  value={value}
-                  placeholder="#800000"
-                  error={colorCodeError}
-                  onChange={(event) =>
-                    setAttributes((prev) => ({ ...prev, [name]: event.target.value }))
-                  }
-                  className="flex-1"
-                />
-              </div>
+          })}
+
+        {explicitColorCodeName && !colorAttrName ? (
+          <div className="col-span-2 flex flex-col gap-1.5">
+            <span className="text-maroon-900 text-sm font-medium">Color code</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                aria-label="Pick color"
+                value={isValidHexColor(colorCodeValue) ? colorCodeValue : "#800000"}
+                onChange={(event) =>
+                  setAttributes((prev) => ({
+                    ...prev,
+                    [explicitColorCodeName]: event.target.value,
+                  }))
+                }
+                className="border-maroon-100 h-11 w-11 shrink-0 cursor-pointer rounded-lg border p-1"
+              />
+              <ImageColorPicker
+                images={images}
+                onPick={(hex) =>
+                  setAttributes((prev) => ({
+                    ...prev,
+                    [explicitColorCodeName]: hex,
+                  }))
+                }
+              />
+              <Input
+                value={colorCodeValue}
+                placeholder="#800000"
+                error={colorCodeError}
+                onChange={(event) =>
+                  setAttributes((prev) => ({
+                    ...prev,
+                    [explicitColorCodeName]: event.target.value,
+                  }))
+                }
+                className="flex-1"
+              />
             </div>
-          );
-        })}
+          </div>
+        ) : null}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Input label="SKU" error={errors.sku?.message} {...register("sku")} />

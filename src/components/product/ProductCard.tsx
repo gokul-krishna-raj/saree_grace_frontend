@@ -3,15 +3,70 @@
 import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { useWishlistToggle } from "@/hooks/useWishlistToggle";
 import { cn } from "@/lib/cn";
+import { getColorCodeValue, isColorAttribute, isValidHexColor } from "@/lib/colorCode";
 import { formatPrice } from "@/lib/formatPrice";
-import type { Product } from "@/types";
+import { getProductPrimaryImage } from "@/lib/productImage";
+import type { Product, ProductImage } from "@/types";
+
+interface ColorOption {
+  colorName: string;
+  colorCode?: string;
+  image?: ProductImage;
+  variantId: string;
+}
+
+function extractColorOptions(product: Product): ColorOption[] {
+  if (product.type !== "variant" || !product.variants || product.variants.length === 0) {
+    return [];
+  }
+
+  const seenColors = new Set<string>();
+  const options: ColorOption[] = [];
+
+  for (const variant of product.variants) {
+    if (!variant.isActive) continue;
+
+    const colorKey = Object.keys(variant.attributes).find((k) => isColorAttribute(k));
+    const colorName = colorKey ? variant.attributes[colorKey]?.trim() : undefined;
+    const colorCode = getColorCodeValue(variant.attributes);
+
+    if (colorName) {
+      const normalizedName = colorName.toLowerCase();
+      if (!seenColors.has(normalizedName)) {
+        seenColors.add(normalizedName);
+        options.push({
+          colorName,
+          colorCode,
+          image: variant.images?.[0],
+          variantId: variant._id,
+        });
+      }
+    } else if (colorCode) {
+      const normalizedCode = colorCode.toLowerCase();
+      if (!seenColors.has(normalizedCode)) {
+        seenColors.add(normalizedCode);
+        options.push({
+          colorName: colorCode,
+          colorCode,
+          image: variant.images?.[0],
+          variantId: variant._id,
+        });
+      }
+    }
+  }
+
+  return options;
+}
 
 export function ProductCard({ product }: { product: Product }) {
   const { isWishlisted, toggle, isLoading } = useWishlistToggle(product._id);
+  const colorOptions = useMemo(() => extractColorOptions(product), [product]);
+  const [activeColor, setActiveColor] = useState<string | null>(null);
 
   const price = product.type === "simple" ? (product.price ?? 0) : product.startingPrice;
   // A variant product spans a price range across its active variants — show it as a range
@@ -29,7 +84,13 @@ export function ProductCard({ product }: { product: Product }) {
   const discountPercent = hasDiscount
     ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
     : null;
-  const primaryImage = product.images.find((image) => image.isPrimary) ?? product.images[0];
+
+  const primaryImage = getProductPrimaryImage(product);
+  const selectedOption = activeColor
+    ? colorOptions.find((opt) => opt.colorName === activeColor)
+    : undefined;
+  const displayedImage = selectedOption?.image ?? primaryImage;
+
   const outOfStock =
     product.type === "simple"
       ? (product.stock ?? 0) <= 0
@@ -45,9 +106,9 @@ export function ProductCard({ product }: { product: Product }) {
         aria-label={product.name}
         className="bg-maroon-50 relative block aspect-[3/4] w-full overflow-hidden"
       >
-        {primaryImage ? (
+        {displayedImage ? (
           <Image
-            src={primaryImage.url}
+            src={displayedImage.url}
             alt={product.name}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
@@ -104,7 +165,48 @@ export function ProductCard({ product }: { product: Product }) {
             </span>
           ) : null}
         </div>
-        {product.type === "variant" && product.variantCount > 1 ? (
+
+        {colorOptions.length > 0 ? (
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 pt-0.5">
+            {colorOptions.map((opt) => {
+              const isSelected = activeColor === opt.colorName;
+              const swatchColor =
+                opt.colorCode ?? (isValidHexColor(opt.colorName) ? opt.colorName : undefined);
+              return (
+                <button
+                  key={opt.colorName}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveColor(opt.colorName);
+                  }}
+                  onMouseEnter={() => setActiveColor(opt.colorName)}
+                  aria-label={`Select ${opt.colorName}`}
+                  aria-pressed={isSelected}
+                  title={opt.colorName}
+                  className={cn(
+                    "relative flex h-5 w-5 items-center justify-center rounded-full transition-all",
+                    isSelected
+                      ? "ring-maroon-800 scale-110 ring-2 ring-offset-1"
+                      : "border-maroon-200 hover:border-maroon-500 border hover:scale-105",
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 rounded-full border border-black/10 shadow-inner"
+                    style={{ backgroundColor: swatchColor ?? "#7A2635" }}
+                  />
+                </button>
+              );
+            })}
+            {colorOptions.length > 1 ? (
+              <span className="text-maroon-500 ml-0.5 text-xs font-normal">
+                {colorOptions.length} colors
+              </span>
+            ) : null}
+          </div>
+        ) : product.type === "variant" && product.variantCount > 1 ? (
           <span className="text-maroon-600 text-xs">{product.variantCount} options</span>
         ) : null}
       </div>

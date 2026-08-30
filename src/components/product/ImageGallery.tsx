@@ -56,10 +56,12 @@ export function ImageGallery({ images, alt }: { images: ProductImage[]; alt: str
               type="button"
               onClick={() => scrollTo(index)}
               aria-label={`Show photo ${index + 1}`}
-              aria-current={index === activeIndex}
+              aria-current={index === (activeIndex < images.length ? activeIndex : 0)}
               className={cn(
                 "relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2",
-                index === activeIndex ? "border-maroon-700" : "border-transparent",
+                index === (activeIndex < images.length ? activeIndex : 0)
+                  ? "border-maroon-700"
+                  : "border-transparent",
               )}
             >
               <Image src={image.url} alt="" fill sizes="64px" className="object-cover" />
@@ -71,7 +73,7 @@ export function ImageGallery({ images, alt }: { images: ProductImage[]; alt: str
       <Modal open={zoomOpen} onClose={() => setZoomOpen(false)} title={alt} className="max-w-2xl">
         <div className="relative aspect-square w-full">
           <Image
-            src={images[activeIndex].url}
+            src={(images[activeIndex < images.length ? activeIndex : 0] ?? images[0]).url}
             alt={`${alt} — enlarged`}
             fill
             sizes="90vw"

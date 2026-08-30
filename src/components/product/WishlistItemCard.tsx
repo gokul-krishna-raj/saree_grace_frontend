@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { formatPrice } from "@/lib/formatPrice";
+import { getProductPrimaryImage } from "@/lib/productImage";
 import { toast } from "@/lib/toast";
 import { useAddCartItemMutation } from "@/store/api/cartApi";
 import { useRemoveFromWishlistMutation } from "@/store/api/wishlistApi";
@@ -25,7 +26,7 @@ export function WishlistItemCard({ product }: { product: WishlistProductSummary 
   // a variant product — verified live, it's always present (a Mongoose virtual), so there's no
   // need to recompute it here.
   const price = product.startingPrice;
-  const primaryImage = product.images[0];
+  const primaryImage = getProductPrimaryImage(product);
   // Wishlist items don't carry a user-chosen variant — moving a variant product to cart
   // defaults to its first active variant rather than blocking on a selection the user would
   // have to make on this page too (they can change it from the product page/cart afterwards).

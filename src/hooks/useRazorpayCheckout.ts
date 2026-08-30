@@ -23,6 +23,36 @@ interface RazorpayOptions {
   order_id: string;
   name: string;
   description?: string;
+  prefill?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  method?: {
+    netbanking?: boolean;
+    card?: boolean;
+    wallet?: boolean;
+    upi?: boolean;
+    paylater?: boolean;
+    emi?: boolean;
+  };
+  config?: {
+    display?: {
+      blocks?: Record<
+        string,
+        {
+          name?: string;
+          instruments?: Array<{
+            method: string;
+          }>;
+        }
+      >;
+      sequence?: string[];
+      preferences?: {
+        show_default_blocks?: boolean;
+      };
+    };
+  };
   handler: (response: RazorpaySuccessResponse) => void;
   theme?: { color?: string };
   modal?: { ondismiss?: () => void };
@@ -72,6 +102,34 @@ export function useRazorpayCheckout() {
           order_id: paymentOrder.razorpayOrderId,
           name: "Saree Grace",
           description: `Order ${order.orderNumber}`,
+          prefill: order.shippingAddress
+            ? {
+                name: order.shippingAddress.fullName,
+                contact: order.shippingAddress.phone,
+              }
+            : undefined,
+          method: {
+            upi: true,
+            card: true,
+            netbanking: false,
+            wallet: false,
+            paylater: false,
+            emi: false,
+          },
+          config: {
+            display: {
+              blocks: {
+                paymentMethods: {
+                  name: "Pay via UPI or Card",
+                  instruments: [{ method: "upi" }, { method: "card" }],
+                },
+              },
+              sequence: ["block.paymentMethods"],
+              preferences: {
+                show_default_blocks: false,
+              },
+            },
+          },
           theme: { color: "#7A2635" },
           handler: (response) => {
             // Real payment confirmation only ever comes from the backend's own signature

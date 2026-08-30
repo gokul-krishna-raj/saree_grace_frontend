@@ -3,7 +3,12 @@
 export const HEX_COLOR_RE = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 
 export function isValidHexColor(value: string): boolean {
-  return HEX_COLOR_RE.test(value);
+  return HEX_COLOR_RE.test(value.trim());
+}
+
+export function isColorAttribute(name: string): boolean {
+  const lower = name.trim().toLowerCase();
+  return lower === "color" || lower === "colour";
 }
 
 // A "colorCode" variant attribute (see BACKEND_CONTRACT.md) exists only so a
@@ -13,10 +18,16 @@ export function isValidHexColor(value: string): boolean {
 // (see ProductDetailClient.tsx), so a product whose admin included it in
 // `variantAttributeNames` still lets a shopper reach every variant without
 // ever being asked to "pick a colorCode".
-const COLOR_CODE_ATTRIBUTE = "colorcode";
-
 export function isColorCodeAttribute(name: string): boolean {
-  return name.trim().toLowerCase() === COLOR_CODE_ATTRIBUTE;
+  const lower = name.trim().toLowerCase();
+  return (
+    lower === "colorcode" ||
+    lower === "color_code" ||
+    lower === "color-code" ||
+    lower === "colourcode" ||
+    lower === "colour_code" ||
+    lower === "colour-code"
+  );
 }
 
 export function selectableAttributeNames(attributeNames: string[]): string[] {
@@ -28,5 +39,13 @@ export function selectableAttributeNames(attributeNames: string[]): string[] {
 // assuming the exact string "colorCode".
 export function getColorCodeValue(attributes: Record<string, string>): string | undefined {
   const key = Object.keys(attributes).find((k) => isColorCodeAttribute(k));
-  return key ? attributes[key] : undefined;
+  if (key && attributes[key] && isValidHexColor(attributes[key])) {
+    return attributes[key].trim();
+  }
+  // Fallback: check if any color attribute value itself is a valid hex
+  const colorKey = Object.keys(attributes).find((k) => isColorAttribute(k));
+  if (colorKey && attributes[colorKey] && isValidHexColor(attributes[colorKey])) {
+    return attributes[colorKey].trim();
+  }
+  return undefined;
 }

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
+import { ImageColorPicker } from "@/components/admin/ImageColorPicker";
 import { ImageDropzone } from "@/components/admin/ImageDropzone";
 import { VariantMiniForm } from "@/components/admin/VariantMiniForm";
 import { Button } from "@/components/ui/Button";
@@ -14,7 +15,7 @@ import { CheckboxGroup } from "@/components/ui/CheckboxGroup";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { getApiErrorMessage } from "@/lib/apiError";
-import { isColorCodeAttribute, isValidHexColor } from "@/lib/colorCode";
+import { isColorAttribute, isColorCodeAttribute, isValidHexColor } from "@/lib/colorCode";
 import { toast } from "@/lib/toast";
 import {
   productBaseFieldsSchema,
@@ -47,8 +48,16 @@ function VariantRow({ productId, variant }: { productId: string; variant: Produc
   const [price, setPrice] = useState(String(variant.price));
   const [stock, setStock] = useState(String(variant.stock));
   const [attributes, setAttributes] = useState<Record<string, string>>(variant.attributes);
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
+  const onRemoveImage = (publicId: string) => setRemovedImageIds((prev) => [...prev, publicId]);
 
-  const colorCodeAttrName = Object.keys(attributes).find((key) => isColorCodeAttribute(key));
+  const hasColorAttr = Object.keys(attributes).some(
+    (key) => isColorAttribute(key) || isColorCodeAttribute(key),
+  );
+  const colorCodeAttrName =
+    Object.keys(attributes).find((key) => isColorCodeAttribute(key)) ??
+    (hasColorAttr ? "colorCode" : undefined);
   const colorCodeValue = colorCodeAttrName ? (attributes[colorCodeAttrName] ?? "") : "";
   const colorCodeError =
     colorCodeAttrName && colorCodeValue.trim() && !isValidHexColor(colorCodeValue.trim())
@@ -58,13 +67,21 @@ function VariantRow({ productId, variant }: { productId: string; variant: Produc
   async function handleSave() {
     if (colorCodeError) return;
     try {
+      const finalAttributes = { ...attributes };
+      if (colorCodeAttrName && colorCodeValue.trim()) {
+        finalAttributes[colorCodeAttrName] = colorCodeValue.trim();
+      }
       await updateVariant({
         productId,
         variantId: variant._id,
         price: Number(price),
         stock: Number(stock),
-        attributes,
+        attributes: finalAttributes,
+        removeImagePublicIds: removedImageIds.length > 0 ? removedImageIds : undefined,
+        images: newImages.length > 0 ? newImages : undefined,
       }).unwrap();
+      setNewImages([]);
+      setRemovedImageIds([]);
       toast.success("Variant updated");
     } catch (error) {
       toast.error(getApiErrorMessage(error as FetchBaseQueryError | SerializedError));
@@ -82,80 +99,105 @@ function VariantRow({ productId, variant }: { productId: string; variant: Produc
   }
 
   return (
-    <div className="border-maroon-50 flex flex-wrap items-end gap-3 rounded-lg border p-3">
-      <div className="flex flex-col gap-1.5">
-        <p className="text-maroon-900 text-sm font-medium">{variant.sku}</p>
-        <div className="flex flex-wrap items-center gap-3">
-          {Object.keys(attributes)
-            .filter((key) => !isColorCodeAttribute(key))
-            .map((key) => (
-              <label key={key} className="text-maroon-700 flex items-center gap-1.5 text-sm">
-                <span className="font-medium">{key.charAt(0).toUpperCase() + key.slice(1)}:</span>
+    <div className="border-maroon-100 flex flex-col gap-3 rounded-lg border bg-white p-3.5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex min-w-[240px] flex-1 flex-col gap-1.5">
+          <p className="text-maroon-900 text-sm font-semibold">{variant.sku}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            {Object.keys(attributes)
+              .filter((key) => !isColorCodeAttribute(key))
+              .map((key) => (
+                <label key={key} className="text-maroon-700 flex items-center gap-1.5 text-sm">
+                  <span className="font-medium capitalize">{key}:</span>
+                  <input
+                    value={attributes[key] ?? ""}
+                    onChange={(event) =>
+                      setAttributes((prev) => ({ ...prev, [key]: event.target.value }))
+                    }
+                    className="border-maroon-100 w-28 rounded border px-2 py-1 text-sm"
+                  />
+                </label>
+              ))}
+            {colorCodeAttrName ? (
+              <div className="text-maroon-700 flex items-center gap-1.5 text-sm">
+                <span className="font-medium">Color code:</span>
                 <input
-                  value={attributes[key] ?? ""}
+                  type="color"
+                  aria-label="Pick color"
+                  value={isValidHexColor(colorCodeValue) ? colorCodeValue : "#800000"}
                   onChange={(event) =>
-                    setAttributes((prev) => ({ ...prev, [key]: event.target.value }))
+                    setAttributes((prev) => ({ ...prev, [colorCodeAttrName]: event.target.value }))
                   }
-                  className="border-maroon-100 w-28 rounded border px-2 py-1 text-sm"
+                  className="border-maroon-100 h-8 w-8 shrink-0 cursor-pointer rounded border p-0.5"
                 />
-              </label>
-            ))}
-          {colorCodeAttrName ? (
-            <div className="text-maroon-700 flex items-center gap-1.5 text-sm">
-              <span className="font-medium">Color code:</span>
-              <input
-                type="color"
-                aria-label="Pick color"
-                value={/^#[0-9A-Fa-f]{6}$/.test(colorCodeValue) ? colorCodeValue : "#000000"}
-                onChange={(event) =>
-                  setAttributes((prev) => ({ ...prev, [colorCodeAttrName]: event.target.value }))
-                }
-                className="border-maroon-100 h-8 w-8 shrink-0 cursor-pointer rounded border p-0.5"
-              />
-              <input
-                value={colorCodeValue}
-                placeholder="#800000"
-                onChange={(event) =>
-                  setAttributes((prev) => ({ ...prev, [colorCodeAttrName]: event.target.value }))
-                }
-                className="border-maroon-100 w-24 rounded border px-2 py-1 text-sm"
-              />
-              {colorCodeError ? (
-                <span role="alert" className="text-xs text-red-600">
-                  {colorCodeError}
-                </span>
-              ) : null}
-            </div>
-          ) : null}
+                <ImageColorPicker
+                  images={newImages}
+                  onPick={(hex) => setAttributes((prev) => ({ ...prev, [colorCodeAttrName]: hex }))}
+                />
+                <input
+                  value={colorCodeValue}
+                  placeholder="#800000"
+                  onChange={(event) =>
+                    setAttributes((prev) => ({ ...prev, [colorCodeAttrName]: event.target.value }))
+                  }
+                  className="border-maroon-100 w-24 rounded border px-2 py-1 text-sm"
+                />
+                {colorCodeError ? (
+                  <span role="alert" className="text-xs text-red-600">
+                    {colorCodeError}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex items-end gap-2">
+          <Input
+            label="Price (₹)"
+            type="number"
+            inputMode="decimal"
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
+            className="w-28"
+          />
+          <Input
+            label="Stock"
+            type="number"
+            inputMode="numeric"
+            value={stock}
+            onChange={(event) => setStock(event.target.value)}
+            className="w-24"
+          />
+          <Button
+            variant="secondary"
+            onClick={handleSave}
+            isLoading={isSaving}
+            disabled={isSaving || Boolean(colorCodeError)}
+          >
+            Save
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={handleDelete}
+            isLoading={isDeleting}
+            disabled={isDeleting}
+          >
+            Delete
+          </Button>
         </div>
       </div>
-      <Input
-        label="Price"
-        type="number"
-        inputMode="decimal"
-        value={price}
-        onChange={(event) => setPrice(event.target.value)}
-        className="w-28"
-      />
-      <Input
-        label="Stock"
-        type="number"
-        inputMode="numeric"
-        value={stock}
-        onChange={(event) => setStock(event.target.value)}
-        className="w-24"
-      />
-      <Button
-        variant="secondary"
-        onClick={handleSave}
-        isLoading={isSaving}
-        disabled={isSaving || Boolean(colorCodeError)}
-      >
-        Save
-      </Button>
-      <Button variant="ghost" onClick={handleDelete} isLoading={isDeleting} disabled={isDeleting}>
-        Delete
-      </Button>
+
+      <div className="border-maroon-50 flex flex-col gap-2 border-t pt-2">
+        <CurrentImages
+          images={variant.images ?? []}
+          removedImageIds={removedImageIds}
+          onRemove={onRemoveImage}
+        />
+        <div>
+          <span className="text-maroon-900 mb-1 block text-xs font-medium">Add variant images</span>
+          <ImageDropzone files={newImages} onChange={setNewImages} disabled={isSaving} />
+        </div>
+      </div>
     </div>
   );
 }

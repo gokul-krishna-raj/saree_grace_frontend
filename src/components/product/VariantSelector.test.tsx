@@ -74,4 +74,30 @@ describe("VariantSelector", () => {
     await userEvent.click(screen.getByRole("button", { name: /blue/i }));
     expect(onSelect).toHaveBeenCalledWith("color", "Blue");
   });
+
+  it("renders color swatches for 'Colour' (British spelling) attribute", () => {
+    const colourVariants: ProductVariant[] = [
+      {
+        _id: "v1",
+        sku: "SKU-MAROON",
+        attributes: { colour: "Maroon", colorCode: "#800000" },
+        price: 2000,
+        stock: 4,
+        images: [],
+        isActive: true,
+      },
+    ];
+    render(
+      <VariantSelector
+        attributeNames={["colour"]}
+        variants={colourVariants}
+        selection={{ colour: "Maroon" }}
+        onSelect={jest.fn()}
+      />,
+    );
+
+    const maroonButton = screen.getByRole("button", { name: /maroon/i });
+    const swatch = maroonButton.querySelector("span[aria-hidden='true']");
+    expect(swatch).toHaveStyle({ backgroundColor: "#800000" });
+  });
 });

@@ -62,6 +62,12 @@ describe("useRazorpayCheckout", () => {
       amount: 189900,
       currency: "INR",
       order_id: "rzp_order_1",
+      method: {
+        upi: true,
+        card: true,
+        netbanking: false,
+        wallet: false,
+      },
     });
     expect(razorpayOpenMock).toHaveBeenCalledTimes(1);
   });

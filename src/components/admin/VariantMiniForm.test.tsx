@@ -84,4 +84,27 @@ describe("VariantMiniForm", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Fill in: color, size");
     expect(addProductVariantMock).not.toHaveBeenCalled();
   });
+
+  it("renders color picker and saves colorCode for a plain 'color' attribute", async () => {
+    const onAdded = jest.fn();
+    render(<VariantMiniForm productId="p1" attributeNames={["color"]} onAdded={onAdded} />);
+
+    expect(screen.getByLabelText("Color")).toBeInTheDocument();
+    expect(screen.getByText("Color code")).toBeInTheDocument();
+    expect(screen.getByLabelText("Pick color")).toHaveAttribute("type", "color");
+
+    await userEvent.type(screen.getByLabelText("Color"), "Emerald Green");
+    await userEvent.type(screen.getByPlaceholderText("#800000"), "#005500");
+    await fillCommonFields();
+    await userEvent.click(screen.getByRole("button", { name: "Add variant" }));
+
+    expect(addProductVariantMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productId: "p1",
+        variant: expect.objectContaining({
+          attributes: { color: "Emerald Green", colorCode: "#005500" },
+        }),
+      }),
+    );
+  });
 });
