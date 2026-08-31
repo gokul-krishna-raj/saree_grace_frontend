@@ -42,11 +42,12 @@ export function ProductDetailClient({ product }: { product: Product }) {
       : undefined;
   const requiresVariantSelection = product.type === "variant" && !activeVariant;
 
-  const images = activeVariant?.images?.length
-    ? activeVariant.images
-    : product.images?.length
-      ? product.images
-      : (product.variants ?? []).flatMap((v) => v.images ?? []);
+  const images =
+    product.type === "variant"
+      ? activeVariant?.images && activeVariant.images.length > 0
+        ? activeVariant.images
+        : (variants[0]?.images ?? [])
+      : (product.images ?? []);
   const price =
     product.type === "variant"
       ? (activeVariant?.price ?? product.startingPrice)

@@ -13,7 +13,7 @@ const envSchema = z.object({
   // Single source of truth for the support address shown in the footer, contact page, and
   // WhatsApp-signup fallback — was previously the literal string "hello@sareegrace.com"
   // duplicated in three files.
-  NEXT_PUBLIC_CONTACT_EMAIL: z.string().optional().default("hello@sareegrace.com"),
+  NEXT_PUBLIC_CONTACT_EMAIL: z.string().optional().default("sareesgrace@gmail.com"),
   // Footer social links — optional and unset by default, same reasoning as
   // NEXT_PUBLIC_WHATSAPP_NUMBER above: no real profile exists yet for any of these, so each
   // icon is hidden individually rather than linking to a fabricated profile URL.

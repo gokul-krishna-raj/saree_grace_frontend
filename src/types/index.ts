@@ -50,6 +50,8 @@ export interface Category {
   name: string;
   slug: string;
   description?: string;
+  seoTitle?: string;
+  seoDescription?: string;
   parentCategory: string | null;
   image?: { url: string; publicId: string };
   isActive: boolean;
@@ -76,6 +78,8 @@ export interface Product {
   name: string;
   slug: string;
   description: string;
+  seoTitle?: string;
+  seoDescription?: string;
   type: ProductType;
   category: Category | string;
   occasions?: (Occasion | string)[];

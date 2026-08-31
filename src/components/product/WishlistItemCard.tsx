@@ -78,25 +78,25 @@ export function WishlistItemCard({ product }: { product: WishlistProductSummary 
           onClick={() => removeFromWishlist({ productId: product._id })}
           disabled={isRemoving}
           aria-label={`Remove ${product.name} from wishlist`}
-          className="text-maroon-700 absolute top-2 right-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-sm hover:bg-white"
+          className="text-maroon-700 absolute top-1.5 right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-sm transition-transform hover:bg-white active:scale-95 sm:top-2 sm:right-2 sm:h-11 sm:w-11"
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-3">
+      <div className="flex flex-1 flex-col gap-1.5 p-2.5 sm:gap-2 sm:p-3">
         <Link
           href={`/products/${product.slug}`}
-          className="font-heading text-maroon-900 line-clamp-2 text-base"
+          className="font-heading text-maroon-900 hover:text-maroon-700 line-clamp-2 text-xs leading-snug transition-colors sm:text-sm md:text-base"
         >
           {product.name}
         </Link>
-        <p className="text-maroon-600 text-sm">
+        <p className="text-maroon-900 text-xs font-semibold sm:text-sm sm:font-medium">
           {product.type === "variant" ? "From " : ""}
           {formatPrice(price)}
         </p>
         <Button
           variant="secondary"
-          className="mt-auto w-full"
+          className="mt-auto h-auto min-h-[36px] w-full px-2 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm"
           onClick={handleMoveToCart}
           isLoading={isAddingToCart}
           disabled={!canMoveToCart}

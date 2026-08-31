@@ -54,5 +54,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     cursor = body.meta.nextCursor;
   }
 
-  return [...staticEntries, ...productEntries];
+  const categoryEntries: MetadataRoute.Sitemap = [];
+  try {
+    const catRes = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/categories`);
+    if (catRes.ok) {
+      const catBody = (await catRes.json()) as ApiSuccess<{ categories: { slug: string }[] }>;
+      if (catBody.success && Array.isArray(catBody.data?.categories)) {
+        for (const cat of catBody.data.categories) {
+          categoryEntries.push({
+            url: `${env.NEXT_PUBLIC_SITE_URL}/products?category=${cat.slug}`,
+            changeFrequency: "weekly",
+            priority: 0.8,
+          });
+        }
+      }
+    }
+  } catch {
+    // Non-blocking fallback if backend is unavailable during build
+  }
+
+  return [...staticEntries, ...categoryEntries, ...productEntries];
 }

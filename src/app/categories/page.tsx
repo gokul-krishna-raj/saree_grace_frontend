@@ -3,9 +3,16 @@ import type { Metadata } from "next";
 import { CategoryGrid } from "@/components/category/CategoryGrid";
 
 export const metadata: Metadata = {
-  title: "All Categories",
-  description: "Browse all saree categories from Saree Grace.",
+  title: "Saree Categories — Silk, Handloom & Designer Weaves",
+  description:
+    "Explore our complete range of saree categories — from bridal pure silks and soft silks to daily wear handloom cottons.",
   alternates: { canonical: "/categories" },
+  openGraph: {
+    title: "Saree Categories | Saree Grace",
+    description:
+      "Explore our complete range of saree categories — from bridal pure silks and soft silks to daily wear handloom cottons.",
+    url: "/categories",
+  },
 };
 
 export default function CategoriesPage() {

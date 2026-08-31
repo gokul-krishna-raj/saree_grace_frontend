@@ -1,4 +1,4 @@
-import { buildFormData } from "@/lib/formData";
+import { buildFormData, buildProductFormData } from "@/lib/formData";
 import { baseApi } from "@/store/api/baseApi";
 import type { ApiSuccess, Product, ProductSort, ProductType } from "@/types";
 
@@ -48,6 +48,8 @@ interface SimpleProductFields {
   compareAtPrice?: number;
   stock: number;
   sku?: string;
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 interface VariantShellFields {
@@ -59,6 +61,8 @@ interface VariantShellFields {
   color?: string;
   isHandloom?: boolean;
   variantAttributeNames: string[];
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 interface ProductVariantFields {
@@ -69,7 +73,28 @@ interface ProductVariantFields {
   stock: number;
 }
 
-interface UpdateProductFields {
+export interface CreateVariantProductFields {
+  name: string;
+  description: string;
+  category: string;
+  occasions?: string[];
+  fabric?: string;
+  color?: string;
+  isHandloom?: boolean;
+  variantAttributeNames: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+  variants: Array<{
+    sku: string;
+    attributes: Record<string, string>;
+    price: number;
+    compareAtPrice?: number;
+    stock: number;
+  }>;
+  variantImages: Array<File[]>;
+}
+
+export interface UpdateProductFields {
   id: string;
   name?: string;
   description?: string;
@@ -83,8 +108,22 @@ interface UpdateProductFields {
   compareAtPrice?: number;
   stock?: number;
   sku?: string;
+  seoTitle?: string;
+  seoDescription?: string;
   removeImagePublicIds?: string[];
   images?: File[];
+  variantAttributeNames?: string[];
+  variants?: Array<{
+    _id?: string;
+    sku: string;
+    attributes: Record<string, string>;
+    price: number;
+    compareAtPrice?: number;
+    stock: number;
+    isActive?: boolean;
+    removeImagePublicIds?: string[];
+  }>;
+  variantImages?: Array<File[]>;
 }
 
 interface UpdateProductVariantFields {
@@ -143,7 +182,7 @@ export const productsApi = baseApi.injectEndpoints({
       query: ({ images, ...fields }) => ({
         url: "/admin/products",
         method: "POST",
-        body: buildFormData({ ...fields, type: "simple" satisfies ProductType }, images),
+        body: buildProductFormData({ ...fields, type: "simple" satisfies ProductType }, images),
       }),
       transformResponse: (response: ApiSuccess<{ product: Product }>) => response.data.product,
       invalidatesTags: [{ type: "Product", id: "LIST" }],
@@ -152,11 +191,27 @@ export const productsApi = baseApi.injectEndpoints({
       query: ({ variantAttributeNames, ...fields }) => ({
         url: "/admin/products",
         method: "POST",
-        body: buildFormData({
+        body: buildProductFormData({
           ...fields,
           type: "variant" satisfies ProductType,
           variantAttributeNames: variantAttributeNames.join(","),
         }),
+      }),
+      transformResponse: (response: ApiSuccess<{ product: Product }>) => response.data.product,
+      invalidatesTags: [{ type: "Product", id: "LIST" }],
+    }),
+    createVariantProduct: builder.mutation<Product, CreateVariantProductFields>({
+      query: ({ variantImages, ...fields }) => ({
+        url: "/admin/products",
+        method: "POST",
+        body: buildProductFormData(
+          {
+            ...fields,
+            type: "variant" satisfies ProductType,
+          },
+          undefined,
+          variantImages,
+        ),
       }),
       transformResponse: (response: ApiSuccess<{ product: Product }>) => response.data.product,
       invalidatesTags: [{ type: "Product", id: "LIST" }],
@@ -174,10 +229,10 @@ export const productsApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { productId }) => [{ type: "Product", id: productId }],
     }),
     updateProduct: builder.mutation<Product, UpdateProductFields>({
-      query: ({ id, images, ...fields }) => ({
+      query: ({ id, images, variantImages, ...fields }) => ({
         url: `/admin/products/${id}`,
         method: "PUT",
-        body: buildFormData({ ...fields }, images),
+        body: buildProductFormData(fields, images, variantImages),
       }),
       transformResponse: (response: ApiSuccess<{ product: Product }>) => response.data.product,
       invalidatesTags: (_result, _error, { id }) => [
@@ -220,6 +275,7 @@ export const {
   useGetBestSellingProductsQuery,
   useCreateSimpleProductMutation,
   useCreateVariantShellProductMutation,
+  useCreateVariantProductMutation,
   useAddProductVariantMutation,
   useUpdateProductMutation,
   useUpdateProductVariantMutation,

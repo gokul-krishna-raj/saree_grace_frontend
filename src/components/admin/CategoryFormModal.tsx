@@ -26,6 +26,8 @@ const categoryFormSchema = z.object({
   name: z.string().trim().min(2, "At least 2 characters").max(100),
   description: z.string().trim().max(1000).optional(),
   parentCategory: z.string().optional(),
+  seoTitle: z.string().trim().max(100, "Maximum 100 characters").optional(),
+  seoDescription: z.string().trim().max(300, "Maximum 300 characters").optional(),
 });
 type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 
@@ -57,6 +59,8 @@ function CategoryForm({
     defaultValues: {
       name: editingCategory?.name ?? "",
       description: editingCategory?.description ?? "",
+      seoTitle: editingCategory?.seoTitle ?? "",
+      seoDescription: editingCategory?.seoDescription ?? "",
       parentCategory:
         (typeof editingCategory?.parentCategory === "string"
           ? editingCategory.parentCategory
@@ -111,6 +115,30 @@ function CategoryForm({
           </option>
         ))}
       </Select>
+
+      <div className="border-maroon-100 bg-maroon-50/50 flex flex-col gap-3 rounded-lg border p-3">
+        <h4 className="font-heading text-maroon-900 text-sm">SEO Settings (Optional)</h4>
+        <Input
+          label="SEO Meta Title"
+          placeholder="e.g. Pure Silk Sarees Collection | Saree Grace"
+          error={errors.seoTitle?.message}
+          {...register("seoTitle")}
+        />
+        <label className="text-maroon-900 flex flex-col gap-1.5 text-sm font-medium">
+          SEO Meta Description
+          <textarea
+            rows={2}
+            placeholder="e.g. Shop handcrafted pure silk sarees from traditional Elampillai weavers..."
+            {...register("seoDescription")}
+            className="border-maroon-200 focus:border-maroon-500 focus:ring-maroon-500 rounded-md border p-2 text-sm"
+          />
+          {errors.seoDescription ? (
+            <span role="alert" className="text-sm font-normal text-red-600">
+              {errors.seoDescription.message}
+            </span>
+          ) : null}
+        </label>
+      </div>
 
       <div>
         <span className="text-maroon-900 mb-1.5 block text-sm font-medium">Image (optional)</span>

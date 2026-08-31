@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BestSellersCarousel } from "@/components/home/BestSellersCarousel";
@@ -9,6 +10,21 @@ import { Hero } from "@/components/home/Hero";
 import { OccasionShowcase } from "@/components/home/OccasionShowcase";
 import { ShopByPrice } from "@/components/home/ShopByPrice";
 import { WhyShopWithUs } from "@/components/home/WhyShopWithUs";
+
+export const metadata: Metadata = {
+  title: "Authentic Elampillai Sarees & Handloom Weaves",
+  description:
+    "Explore pure silk, soft silk, and handloom cotton sarees direct from traditional weaver families in Elampillai, Tamil Nadu. Fast shipping across India.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Saree Grace — Authentic Elampillai Sarees",
+    description:
+      "Explore pure silk, soft silk, and handloom cotton sarees direct from traditional weaver families in Elampillai, Tamil Nadu.",
+    url: "/",
+    siteName: "Saree Grace",
+    type: "website",
+  },
+};
 
 export default function HomePage() {
   return (

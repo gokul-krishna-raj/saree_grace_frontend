@@ -17,6 +17,8 @@ export const productBaseFieldsSchema = z.object({
   fabric: z.string().trim().max(100).optional(),
   color: z.string().trim().max(100).optional(),
   isHandloom: z.boolean().optional(),
+  seoTitle: z.string().trim().max(100, "Maximum 100 characters").optional(),
+  seoDescription: z.string().trim().max(300, "Maximum 300 characters").optional(),
 });
 export type ProductBaseFormValues = z.infer<typeof productBaseFieldsSchema>;
 

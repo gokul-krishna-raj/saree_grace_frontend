@@ -21,8 +21,26 @@ export function buildFormData(fields: Record<string, unknown>, images?: File[]):
   return formData;
 }
 
-// Categories accept a single `image` file field (singular) rather than the `images` array
-// used by products — see category.routes.ts's `uploadImages.single('image')`.
+export function buildProductFormData(
+  fields: Record<string, unknown>,
+  simpleImages?: File[],
+  variantImagesByIndex?: Array<File[]>,
+): FormData {
+  const formData = new FormData();
+  appendFields(formData, fields);
+  for (const file of simpleImages ?? []) {
+    formData.append("images", file);
+  }
+  if (variantImagesByIndex) {
+    variantImagesByIndex.forEach((files, index) => {
+      for (const file of files) {
+        formData.append(`variant_image_${index}`, file);
+      }
+    });
+  }
+  return formData;
+}
+
 export function buildFormDataWithFile(
   fields: Record<string, unknown>,
   file: File | undefined,

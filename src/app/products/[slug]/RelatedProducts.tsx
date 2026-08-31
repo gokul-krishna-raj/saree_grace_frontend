@@ -18,8 +18,8 @@ export function RelatedProducts({
 
   if (isLoading) {
     return (
-      <section className="px-4 py-8">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <section className="px-3 py-8 sm:px-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="aspect-[3/4] w-full" />
           ))}
@@ -31,9 +31,9 @@ export function RelatedProducts({
   if (related.length === 0) return null;
 
   return (
-    <section className="px-4 py-8">
+    <section className="px-3 py-8 sm:px-4">
       <h2 className="font-heading text-maroon-900 mb-4 text-xl">You may also like</h2>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         {related.map((product) => (
           <ProductCard key={product._id} product={product} />
         ))}

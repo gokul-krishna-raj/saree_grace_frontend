@@ -33,8 +33,18 @@ export async function generateMetadata({
     return { title: "Product not found", robots: { index: false, follow: false } };
   }
 
-  const title = sanitizeSeoText(product.name);
-  const description = sanitizeSeoText(product.description.slice(0, 160));
+  const categoryName =
+    typeof product.category === "object" && product.category?.name ? product.category.name : "";
+
+  const title =
+    product.seoTitle?.trim() || (categoryName ? `${product.name} — ${categoryName}` : product.name);
+
+  const fallbackDescription =
+    product.description.length >= 40
+      ? sanitizeSeoText(product.description.slice(0, 160))
+      : `Shop ${product.name} ${categoryName ? `in ${categoryName}` : ""} at Saree Grace. Handcrafted with premium quality materials by traditional weavers.`;
+
+  const description = product.seoDescription?.trim() || fallbackDescription;
   const primaryImage = getProductPrimaryImage(product);
   const image = primaryImage?.url;
 
@@ -43,13 +53,13 @@ export async function generateMetadata({
     description,
     alternates: { canonical: `/products/${product.slug}` },
     openGraph: {
-      title,
+      title: `${title} | Saree Grace`,
       description,
       images: image ? [{ url: image }] : undefined,
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: `${title} | Saree Grace`,
       description,
       images: image ? [{ url: image }] : undefined,
     },

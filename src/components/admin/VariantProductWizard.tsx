@@ -118,6 +118,32 @@ function ShellForm({ onCreated }: { onCreated: (product: Product) => void }) {
         />
         This is a handloom product
       </label> */}
+      <div className="border-maroon-100 bg-maroon-50/50 flex flex-col gap-3 rounded-lg border p-4">
+        <h3 className="font-heading text-maroon-900 text-base">SEO Settings (Optional)</h3>
+        <p className="text-maroon-600 text-xs">
+          Leave blank to automatically generate SEO title and description from product details.
+        </p>
+        <Input
+          label="SEO Meta Title"
+          placeholder="e.g. Traditional Kanjivaram Silk Saree | Saree Grace"
+          error={errors.seoTitle?.message}
+          {...register("seoTitle")}
+        />
+        <label className="text-maroon-900 flex flex-col gap-1.5 text-sm font-medium">
+          SEO Meta Description
+          <textarea
+            rows={2}
+            placeholder="e.g. Discover our authentic handwoven Kanjivaram silk saree with rich zari pallu..."
+            {...register("seoDescription")}
+            className="border-maroon-200 focus:border-maroon-500 focus:ring-maroon-500 rounded-md border p-2 text-sm"
+          />
+          {errors.seoDescription ? (
+            <span role="alert" className="text-sm font-normal text-red-600">
+              {errors.seoDescription.message}
+            </span>
+          ) : null}
+        </label>
+      </div>
       <Controller
         control={control}
         name="variantAttributeNames"

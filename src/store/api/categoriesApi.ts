@@ -5,6 +5,8 @@ import type { ApiSuccess, Category, CategoryTreeNode } from "@/types";
 export interface CreateCategoryRequest {
   name: string;
   description?: string;
+  seoTitle?: string;
+  seoDescription?: string;
   parentCategory?: string | null;
   image?: File;
 }
@@ -13,6 +15,8 @@ export interface UpdateCategoryRequest {
   id: string;
   name?: string;
   description?: string;
+  seoTitle?: string;
+  seoDescription?: string;
   parentCategory?: string | null;
   isActive?: boolean;
   image?: File;
