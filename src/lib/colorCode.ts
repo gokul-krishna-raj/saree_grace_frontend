@@ -31,7 +31,18 @@ export function isColorCodeAttribute(name: string): boolean {
 }
 
 export function selectableAttributeNames(attributeNames: string[]): string[] {
-  return attributeNames.filter((name) => !isColorCodeAttribute(name));
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const name of attributeNames) {
+    const trimmed = name.trim();
+    if (!trimmed || isColorCodeAttribute(trimmed)) continue;
+    const lower = trimmed.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      result.push(trimmed);
+    }
+  }
+  return result;
 }
 
 // Attribute keys are whatever an admin typed into `variantAttributeNames`

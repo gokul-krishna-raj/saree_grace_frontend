@@ -18,9 +18,16 @@ import { applySelection, findMatchingVariant, getDefaultSelection } from "@/lib/
 import type { Occasion, Product } from "@/types";
 
 export function ProductDetailClient({ product }: { product: Product }) {
+  // Fall back to collecting attribute keys from variant items if variantAttributeNames is missing or empty
+  const rawAttributeNames =
+    product.variantAttributeNames && product.variantAttributeNames.length > 0
+      ? product.variantAttributeNames
+      : Array.from(
+          new Set((product.variants ?? []).flatMap((v) => Object.keys(v.attributes ?? {}))),
+        );
   // "colorCode" (when an admin included it in variantAttributeNames) is metadata for a swatch,
   // not a dimension a shopper picks — excluded here so selection/matching never requires it.
-  const attributeNames = selectableAttributeNames(product.variantAttributeNames ?? []);
+  const attributeNames = selectableAttributeNames(rawAttributeNames);
   const variants = product.variants ?? [];
   // Only entries the API actually populated (not just an ObjectId string) can be shown —
   // rendering a raw id would be a meaningless label and a broken link.

@@ -111,3 +111,57 @@ describe("getDefaultSelection", () => {
     });
   });
 });
+
+describe("case-insensitive attribute handling", () => {
+  const mixedCaseVariants: ProductVariant[] = [
+    {
+      _id: "m1",
+      sku: "SG-MIXED-1",
+      attributes: { color: "Maroon", border: "Zari" },
+      price: 5000,
+      stock: 3,
+      images: [],
+      isActive: true,
+    },
+    {
+      _id: "m2",
+      sku: "SG-MIXED-2",
+      attributes: { color: "Gold", border: "Thread" },
+      price: 6000,
+      stock: 4,
+      images: [],
+      isActive: true,
+    },
+  ];
+
+  it("retrieves available values when attributeName casing differs from variant attributes", () => {
+    expect(getAvailableValues(mixedCaseVariants, "Color", {})).toEqual(["Maroon", "Gold"]);
+    expect(getAvailableValues(mixedCaseVariants, "Border", { Color: "Maroon" })).toEqual(["Zari"]);
+  });
+
+  it("finds matching variant when selection and attributeNames casing differ", () => {
+    const match = findMatchingVariant(mixedCaseVariants, ["Color", "Border"], {
+      Color: "Maroon",
+      Border: "Zari",
+    });
+    expect(match?._id).toBe("m1");
+  });
+
+  it("produces default selection when attributeNames use uppercase", () => {
+    expect(getDefaultSelection(mixedCaseVariants, ["Color", "Border"])).toEqual({
+      Color: "Maroon",
+      Border: "Zari",
+    });
+  });
+
+  it("applies selection smoothly with differing casing", () => {
+    const next = applySelection(
+      mixedCaseVariants,
+      ["Color", "Border"],
+      { Color: "Maroon", Border: "Zari" },
+      "Color",
+      "Gold",
+    );
+    expect(next).toEqual({ Color: "Gold", Border: "Thread" });
+  });
+});

@@ -48,7 +48,7 @@ export default function HomePage() {
         <FeaturedCarousel />
       </section>
       <ShopByPrice />
-      <section className="flex flex-col gap-4">
+      {/* <section className="flex flex-col gap-4">
         <div className="px-4">
           <h2 className="font-heading text-maroon-900 text-2xl">Shop by Occasion</h2>
           <p className="text-maroon-600 mt-1 text-sm">
@@ -56,7 +56,7 @@ export default function HomePage() {
           </p>
         </div>
         <OccasionShowcase />
-      </section>
+      </section> */}
       <WhyShopWithUs />
       <BestSellersCarousel />
       <BrandStory />

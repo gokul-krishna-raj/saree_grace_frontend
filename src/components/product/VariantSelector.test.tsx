@@ -100,4 +100,23 @@ describe("VariantSelector", () => {
     const swatch = maroonButton.querySelector("span[aria-hidden='true']");
     expect(swatch).toHaveStyle({ backgroundColor: "#800000" });
   });
+
+  it("renders options and swatches when attributeNames casing differs from variant attributes", () => {
+    render(
+      <VariantSelector
+        attributeNames={["Color"]}
+        variants={variants}
+        selection={{ Color: "Red" }}
+        onSelect={jest.fn()}
+      />,
+    );
+
+    const redButton = screen.getByRole("button", { name: /red/i });
+    expect(redButton).toHaveAttribute("aria-pressed", "true");
+    const swatch = redButton.querySelector("span[aria-hidden='true']");
+    expect(swatch).toHaveStyle({ backgroundColor: "#ff0000" });
+
+    const blueButton = screen.getByRole("button", { name: /blue/i });
+    expect(blueButton).toHaveAttribute("aria-pressed", "false");
+  });
 });
