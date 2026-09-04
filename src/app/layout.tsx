@@ -11,6 +11,7 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { OrganizationJsonLd } from "@/components/seo/OrganizationJsonLd";
 import { WebSiteJsonLd } from "@/components/seo/WebSiteJsonLd";
 import { env } from "@/lib/env";
@@ -87,6 +88,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Footer />
           <CartDrawer />
           <MobileBottomNav />
+          <WhatsAppButton />
           {/* top-center, not bottom-center: the fixed mobile bottom nav (added in Section 13)
               would otherwise sit on top of bottom-anchored toasts on small screens. */}
           <Toaster position="top-center" toastOptions={{ duration: 4000 }} />

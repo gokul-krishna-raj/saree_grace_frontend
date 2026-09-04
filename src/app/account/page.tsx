@@ -10,7 +10,14 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useGetMeQuery, useLogoutMutation } from "@/store/api/authApi";
 
 function ProfileContent() {
-  const { data: user, isLoading } = useGetMeQuery();
+  const {
+    data: user,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetMeQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const router = useRouter();
 
@@ -19,11 +26,23 @@ function ProfileContent() {
     router.push("/");
   }
 
-  if (isLoading || !user) {
+  if (isLoading && !user) {
     return (
       <div className="flex flex-col gap-3">
         <Skeleton className="h-6 w-40" />
         <Skeleton className="h-4 w-56" />
+      </div>
+    );
+  }
+
+  if (isError || !user) {
+    return (
+      <div className="border-maroon-100 rounded-lg border bg-white p-6 text-center">
+        <p className="text-maroon-800 font-medium">Unable to load your profile details</p>
+        <p className="text-maroon-600 mt-1 text-sm">Please check your connection and try again.</p>
+        <Button variant="secondary" onClick={() => refetch()} className="mt-4">
+          Try again
+        </Button>
       </div>
     );
   }

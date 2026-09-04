@@ -24,9 +24,10 @@ jest.mock("@/store/api/ordersApi", () => ({
   useCreateOrderMutation: () => [createOrderMock, { isLoading: false }],
 }));
 
+let isProcessingMock = false;
 const payForOrderMock = jest.fn();
 jest.mock("@/hooks/useRazorpayCheckout", () => ({
-  useRazorpayCheckout: () => ({ payForOrder: payForOrderMock, isProcessing: false }),
+  useRazorpayCheckout: () => ({ payForOrder: payForOrderMock, isProcessing: isProcessingMock }),
 }));
 
 import { CheckoutForm } from "./CheckoutForm";
@@ -45,6 +46,16 @@ describe("CheckoutForm", () => {
     createOrderMock.mockReset();
     payForOrderMock.mockReset();
     cartState.isEmpty = false;
+    isProcessingMock = false;
+  });
+
+  it("shows confirming payment state when payment is processing even if cart is empty", () => {
+    cartState.isEmpty = true;
+    isProcessingMock = true;
+    render(<CheckoutForm />);
+
+    expect(screen.getByText(/confirming your payment/i)).toBeInTheDocument();
+    expect(screen.queryByText(/cart is empty/i)).not.toBeInTheDocument();
   });
 
   it("shows the empty-cart message instead of the form when the cart is empty", () => {

@@ -46,6 +46,23 @@ export function CheckoutForm() {
   const shippingFee = selectedState ? getShippingFeeForState(selectedState) : estimatedShippingFee;
   const total = itemsTotal + shippingFee;
 
+  if (isProcessing) {
+    return (
+      <div
+        className="flex flex-col items-center gap-4 py-16 text-center"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="border-maroon-200 border-t-maroon-700 h-12 w-12 animate-spin rounded-full border-4" />
+        <h2 className="font-heading text-maroon-900 text-xl">Confirming your payment...</h2>
+        <p className="text-maroon-600 max-w-sm text-sm">
+          Please do not refresh or close this page while we verify your transaction and prepare your
+          order.
+        </p>
+      </div>
+    );
+  }
+
   if (isEmpty) {
     return (
       <div className="flex flex-col items-center gap-4 py-16 text-center">

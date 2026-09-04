@@ -1,4 +1,5 @@
 import { baseApi } from "@/store/api/baseApi";
+import { ordersApi } from "@/store/api/ordersApi";
 import type { ApiSuccess, Order } from "@/types";
 
 export interface CreateRazorpayOrderResult {
@@ -25,6 +26,14 @@ export const paymentsApi = baseApi.injectEndpoints({
     verifyPayment: builder.mutation<Order, VerifyPaymentRequest>({
       query: (body) => ({ url: "/payments/verify", method: "POST", body }),
       transformResponse: (response: ApiSuccess<{ order: Order }>) => response.data.order,
+      onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
+        try {
+          const { data: order } = await queryFulfilled;
+          await dispatch(ordersApi.util.upsertQueryData("getOrderById", order._id, order));
+        } catch {
+          // Verification failure is handled in the checkout caller
+        }
+      },
       invalidatesTags: (result) =>
         result
           ? [

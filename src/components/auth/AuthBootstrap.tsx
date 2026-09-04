@@ -2,18 +2,13 @@
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
-import { getStoredRefreshToken } from "@/lib/authStorage";
+import { getStoredRefreshToken, subscribeAuthStorage } from "@/lib/authStorage";
 import { useGetMeQuery } from "@/store/api/authApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { checkingSession, loggedOut } from "@/store/slices/authSlice";
 
 const MAX_TRANSIENT_RETRIES = 3;
 
-function subscribe() {
-  // localStorage has no change-notification mechanism we need here — this is read once per
-  // mount, not watched for external mutation.
-  return () => {};
-}
 function getClientSnapshot() {
   return getStoredRefreshToken() !== null;
 }
@@ -31,14 +26,22 @@ export function AuthBootstrap() {
   const dispatch = useAppDispatch();
   // useSyncExternalStore (not useState+useEffect) because the "true" value only exists on the
   // client (localStorage) — the server snapshot must be `false` for a stable SSR pass.
-  const hasRefreshToken = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+  const hasRefreshToken = useSyncExternalStore(
+    subscribeAuthStorage,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+  const status = useAppSelector((state) => state.auth.status);
 
   useEffect(() => {
-    dispatch(hasRefreshToken ? checkingSession() : loggedOut());
-  }, [hasRefreshToken, dispatch]);
+    if (status !== "authenticated") {
+      dispatch(hasRefreshToken ? checkingSession() : loggedOut());
+    }
+  }, [hasRefreshToken, status, dispatch]);
 
-  const { isError, refetch } = useGetMeQuery(undefined, { skip: !hasRefreshToken });
-  const status = useAppSelector((state) => state.auth.status);
+  const { isError, refetch } = useGetMeQuery(undefined, {
+    skip: !hasRefreshToken && status !== "authenticated",
+  });
   const retryCountRef = useRef(0);
 
   // A transient refresh failure (rate limit, network blip — see baseApi.ts) leaves status at

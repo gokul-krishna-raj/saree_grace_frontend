@@ -59,7 +59,7 @@ async function applyAuthResult(
   const { data } = await queryFulfilled;
   setStoredRefreshToken(data.refreshToken);
   dispatch(accessTokenSet({ accessToken: data.accessToken }));
-  dispatch(authApi.util.upsertQueryData("getMe", undefined, data.user));
+  await dispatch(authApi.util.upsertQueryData("getMe", undefined, data.user));
 
   // Fold any guest-cart items (added before signing in — the backend has no anonymous cart,
   // see BACKEND_CONTRACT.md) into the now-authenticated server cart, then clear the local copy
