@@ -28,7 +28,7 @@ export function Hero() {
         </div>
         <div className="from-gold-400/30 via-maroon-600 to-maroon-900 relative h-72 w-full max-w-sm overflow-hidden rounded-lg bg-gradient-to-br sm:h-96 lg:h-[32rem] lg:flex-1">
           <Image
-            src="/hero-saree-model.png"
+            src="/hero-saree-model.webp"
             alt="Model wearing a premium Saree Grace saree"
             fill
             priority

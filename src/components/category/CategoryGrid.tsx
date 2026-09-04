@@ -4,11 +4,17 @@ import { CategoryCard } from "@/components/category/CategoryCard";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useGetCategoriesQuery } from "@/store/api/categoriesApi";
+import type { Category } from "@/types";
 
-export function CategoryGrid() {
+interface CategoryGridProps {
+  initialCategories?: Category[];
+}
+
+export function CategoryGrid({ initialCategories }: CategoryGridProps = {}) {
   const { data: categories, isLoading, isError, refetch } = useGetCategoriesQuery(undefined);
+  const displayCategories = categories ?? initialCategories;
 
-  if (isLoading) {
+  if (isLoading && (!initialCategories || initialCategories.length === 0)) {
     return (
       <div className="grid grid-cols-3 gap-x-4 gap-y-8 px-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
         {Array.from({ length: 12 }).map((_, index) => (
@@ -21,11 +27,11 @@ export function CategoryGrid() {
     );
   }
 
-  if (isError) {
+  if (isError && !displayCategories?.length) {
     return <ErrorState message="Unable to load categories." onRetry={refetch} />;
   }
 
-  if (!categories?.length) {
+  if (!displayCategories?.length) {
     return (
       <p className="text-maroon-600 px-4 py-12 text-center text-sm">
         Categories are being set up — check back soon.
@@ -35,7 +41,7 @@ export function CategoryGrid() {
 
   return (
     <div className="grid grid-cols-3 gap-x-4 gap-y-8 px-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-      {categories.map((category) => (
+      {displayCategories.map((category) => (
         <CategoryCard key={category._id} category={category} size="lg" />
       ))}
     </div>

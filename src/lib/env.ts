@@ -20,11 +20,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_INSTAGRAM_URL: z.string().optional().default(""),
   NEXT_PUBLIC_FACEBOOK_URL: z.string().optional().default(""),
   NEXT_PUBLIC_YOUTUBE_URL: z.string().optional().default(""),
-  // Added in Section 15 for sitemap.xml / metadataBase, which both need an absolute URL — no
-  // real production domain has been confirmed for this project, so this defaults to localhost
-  // rather than a guessed domain. MUST be set to the real production URL before deploying —
-  // see NOTES.md.
-  NEXT_PUBLIC_SITE_URL: z.string().url().optional().default("http://localhost:3000"),
+  // Canonical production domain for Saree Grace. Can be overridden in .env.local for local dev.
+  NEXT_PUBLIC_SITE_URL: z.string().url().optional().default("https://www.sareegrace.in"),
   // Section 19 — error monitoring. No real Sentry project exists yet (same placeholder-
   // credential situation as Razorpay/Cloudinary, see NOTES.md); left empty, Sentry.init() is
   // skipped entirely when unset (instrumentation-client.ts / instrumentation.ts) rather than

@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useInfiniteProducts } from "@/hooks/useInfiniteProducts";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import type { ParsedProductFilters } from "@/lib/validation/productFilters";
+import type { Product } from "@/types";
 
 function GridSkeleton() {
   return (
@@ -19,9 +20,15 @@ function GridSkeleton() {
   );
 }
 
-export function ProductGrid({ filters }: { filters: ParsedProductFilters }) {
+export function ProductGrid({
+  filters,
+  initialItems,
+}: {
+  filters: ParsedProductFilters;
+  initialItems?: Product[];
+}) {
   const { items, isLoading, isFetchingMore, isError, isFetching, hasMore, loadMore, refetch } =
-    useInfiniteProducts(filters);
+    useInfiniteProducts(filters, initialItems);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useIntersectionObserver(sentinelRef, loadMore, { rootMargin: "300px" });

@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "Return & Refund Policy",
   description: "Return eligibility, exchange, and refund timelines for Saree Grace orders.",
   alternates: { canonical: "/refund-policy" },
+  openGraph: {
+    title: "Return & Refund Policy | Saree Grace",
+    description: "Return eligibility, exchange, and refund timelines for Saree Grace orders.",
+    url: "/refund-policy",
+  },
 };
 
 export default function RefundPolicyPage() {

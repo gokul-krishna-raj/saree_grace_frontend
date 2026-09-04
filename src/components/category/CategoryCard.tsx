@@ -20,7 +20,7 @@ interface CategoryCardProps {
 export function CategoryCard({ category, size = "md", className }: CategoryCardProps) {
   return (
     <Link
-      href={`/products?category=${category.slug}`}
+      href={`/categories/${category.slug}`}
       className={cn("group flex flex-col items-center gap-2.5 text-center", className)}
     >
       <span

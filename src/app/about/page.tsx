@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Our Story",
+  title: "Our Story — Authentic Elampillai Weavers",
   description:
-    "Saree Grace works with weaver families in Elampillai, Tamil Nadu to bring cotton and silk sarees woven in the traditional style.",
+    "Learn how Saree Grace partners directly with traditional weaver families in Elampillai, Salem to deliver authentic cotton and silk sarees.",
   alternates: { canonical: "/about" },
+  openGraph: {
+    title: "Our Story — Saree Grace",
+    description:
+      "Learn how Saree Grace partners directly with traditional weaver families in Elampillai, Salem to deliver authentic cotton and silk sarees.",
+    url: "/about",
+  },
 };
 
 export default function AboutPage() {

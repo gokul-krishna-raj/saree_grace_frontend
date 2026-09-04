@@ -4,14 +4,20 @@ import Link from "next/link";
 
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useGetCategoriesQuery } from "@/store/api/categoriesApi";
+import type { Category } from "@/types";
 
 const MAX_LINKS = 8;
 
-export function FooterCategoriesList() {
-  const { data: categories, isLoading, isError } = useGetCategoriesQuery(undefined);
-  const topLevel = categories?.filter((category) => category.parentCategory === null) ?? [];
+interface FooterCategoriesListProps {
+  initialCategories?: Category[];
+}
 
-  if (isLoading) {
+export function FooterCategoriesList({ initialCategories }: FooterCategoriesListProps = {}) {
+  const { data: categories, isLoading } = useGetCategoriesQuery(undefined);
+  const rawList = categories ?? initialCategories ?? [];
+  const topLevel = rawList.filter((category) => category.parentCategory === null);
+
+  if (isLoading && (!initialCategories || initialCategories.length === 0)) {
     return (
       <>
         {Array.from({ length: 4 }).map((_, index) => (
@@ -21,7 +27,7 @@ export function FooterCategoriesList() {
     );
   }
 
-  if (isError || topLevel.length === 0) {
+  if (topLevel.length === 0) {
     return (
       <Link href="/products" className="text-maroon-700 hover:text-maroon-900 text-sm">
         Browse all sarees
@@ -34,7 +40,7 @@ export function FooterCategoriesList() {
       {topLevel.slice(0, MAX_LINKS).map((category) => (
         <Link
           key={category._id}
-          href={`/products?category=${category.slug}`}
+          href={`/categories/${category.slug}`}
           className="text-maroon-700 hover:text-maroon-900 text-sm"
         >
           {category.name}

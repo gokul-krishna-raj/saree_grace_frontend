@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "How Saree Grace collects, uses, and protects your personal information.",
   alternates: { canonical: "/privacy-policy" },
+  openGraph: {
+    title: "Privacy Policy | Saree Grace",
+    description: "How Saree Grace collects, uses, and protects your personal information.",
+    url: "/privacy-policy",
+  },
 };
 
 export default function PrivacyPolicyPage() {

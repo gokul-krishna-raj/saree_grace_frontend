@@ -16,10 +16,10 @@ const PAGE_SIZE = 12;
 // state internally on filter change — remounting via `key` is the idiomatic React way to reset
 // all of a component's state when its identity changes, instead of an effect that watches for
 // prop changes and calls setState.
-export function useInfiniteProducts(filters: ParsedProductFilters) {
+export function useInfiniteProducts(filters: ParsedProductFilters, initialItems?: Product[]) {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
-  const [items, setItems] = useState<Product[]>([]);
-  const seenIds = useRef<Set<string>>(new Set());
+  const [items, setItems] = useState<Product[]>(initialItems ?? []);
+  const seenIds = useRef<Set<string>>(new Set(initialItems ? initialItems.map((p) => p._id) : []));
 
   const isSearch = Boolean(filters.q);
 

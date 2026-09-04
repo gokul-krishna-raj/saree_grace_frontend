@@ -6,12 +6,18 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useGetProductsQuery } from "@/store/api/productsApi";
+import type { Product } from "@/types";
 
-export function FeaturedCarousel() {
+interface FeaturedCarouselProps {
+  initialProducts?: Product[];
+}
+
+export function FeaturedCarousel({ initialProducts }: FeaturedCarouselProps = {}) {
   const { data, isLoading, isError } = useGetProductsQuery({ sort: "newest", limit: 8 });
+  const products = data?.products ?? initialProducts ?? [];
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start", dragFree: true });
 
-  if (isLoading) {
+  if (isLoading && (!initialProducts || initialProducts.length === 0)) {
     return (
       <div className="flex gap-4 overflow-hidden px-4">
         {Array.from({ length: 4 }).map((_, index) => (
@@ -21,7 +27,7 @@ export function FeaturedCarousel() {
     );
   }
 
-  if (isError) {
+  if (isError && products.length === 0) {
     return (
       <p className="text-maroon-600 px-4 text-center text-sm">
         Couldn&apos;t load new arrivals right now. Please try again shortly.
@@ -29,7 +35,7 @@ export function FeaturedCarousel() {
     );
   }
 
-  if (!data?.products.length) {
+  if (!products.length) {
     return (
       <p className="text-maroon-600 px-4 text-center text-sm">
         New arrivals are on their way — check back soon.
@@ -41,7 +47,7 @@ export function FeaturedCarousel() {
     <div className="relative">
       <div ref={emblaRef} className="overflow-hidden px-4">
         <div className="flex gap-4">
-          {data.products.map((product) => (
+          {products.map((product) => (
             <div key={product._id} className="w-48 shrink-0 sm:w-56">
               <ProductCard product={product} />
             </div>

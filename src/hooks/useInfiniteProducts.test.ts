@@ -46,6 +46,8 @@ jest.mock("@/store/api/productsApi", () => ({
   }),
 }));
 
+import type { Product } from "@/types";
+
 import { useInfiniteProducts } from "./useInfiniteProducts";
 
 describe("useInfiniteProducts", () => {
@@ -95,5 +97,16 @@ describe("useInfiniteProducts", () => {
 
     result.current.refetch();
     expect(refetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("initializes immediately with initialItems to support SSR pre-rendering", () => {
+    const initial = [
+      { _id: "init1", name: "Soft Silk Saree" } as unknown as Product,
+      { _id: "init2", name: "Pure Cotton Saree" } as unknown as Product,
+    ];
+    const { result } = renderHook(() => useInfiniteProducts({ sort: "newest" }, initial));
+
+    expect(result.current.items.map((p) => p._id)).toContain("init1");
+    expect(result.current.items.map((p) => p._id)).toContain("init2");
   });
 });

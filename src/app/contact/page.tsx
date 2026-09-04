@@ -1,9 +1,16 @@
+import type { Metadata } from "next";
+
 import { env } from "@/lib/env";
 
-export const metadata = {
-  title: "Contact",
-  description: "Get in touch with Saree Grace for questions, orders, and support.",
+export const metadata: Metadata = {
+  title: "Contact Us",
+  description: "Get in touch with Saree Grace for questions, orders, and customer support.",
   alternates: { canonical: "/contact" },
+  openGraph: {
+    title: "Contact Us | Saree Grace",
+    description: "Get in touch with Saree Grace for questions, orders, and customer support.",
+    url: "/contact",
+  },
 };
 
 export default function ContactPage() {

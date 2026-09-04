@@ -8,13 +8,35 @@ import { ProductGrid } from "@/components/product/ProductGrid";
 import { SearchBar } from "@/components/product/SearchBar";
 import { SortSelect } from "@/components/product/SortSelect";
 import { parseProductFilters } from "@/lib/validation/productFilters";
+import type { Product } from "@/types";
 
-export function ProductListingClient() {
+interface ProductListingClientProps {
+  initialProducts?: Product[];
+  fixedCategory?: string;
+}
+
+export function ProductListingClient({
+  initialProducts,
+  fixedCategory,
+}: ProductListingClientProps = {}) {
   const searchParams = useSearchParams();
   const filters = parseProductFilters(searchParams);
+  if (fixedCategory) {
+    filters.category = fixedCategory;
+  }
   // Remount the grid+its infinite-scroll state whenever the filter set changes, instead of
   // reconciling it internally — see useInfiniteProducts.ts for why.
   const filtersKey = JSON.stringify(filters);
+
+  // Pass server-fetched initial products if no custom query filters are set
+  const isDefaultView =
+    searchParams.size === 0 ||
+    (Boolean(fixedCategory) &&
+      !searchParams.has("sort") &&
+      !searchParams.has("q") &&
+      !searchParams.has("minPrice") &&
+      !searchParams.has("maxPrice"));
+  const initialItems = isDefaultView ? initialProducts : undefined;
 
   return (
     <div className="flex flex-col gap-4">
@@ -29,7 +51,7 @@ export function ProductListingClient() {
         <aside className="hidden pl-4 lg:block">
           <FilterPanel />
         </aside>
-        <ProductGrid key={filtersKey} filters={filters} />
+        <ProductGrid key={filtersKey} filters={filters} initialItems={initialItems} />
       </div>
     </div>
   );

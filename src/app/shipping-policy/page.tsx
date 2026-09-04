@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "Shipping Policy",
   description: "Shipping timelines, charges, and delivery areas for Saree Grace orders.",
   alternates: { canonical: "/shipping-policy" },
+  openGraph: {
+    title: "Shipping Policy | Saree Grace",
+    description: "Shipping timelines, charges, and delivery areas for Saree Grace orders.",
+    url: "/shipping-policy",
+  },
 };
 
 export default function ShippingPolicyPage() {

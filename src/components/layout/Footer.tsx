@@ -10,6 +10,8 @@ import {
   YoutubeIcon,
 } from "@/components/layout/SocialIcons";
 import { env } from "@/lib/env";
+import { serverFetch } from "@/lib/serverApi";
+import type { Category } from "@/types";
 
 const PAYMENT_METHODS = ["UPI", "Visa", "Mastercard", "RuPay", "Net Banking"];
 
@@ -26,8 +28,10 @@ function formatPhoneForDisplay(raw: string) {
   return `+${digits}`;
 }
 
-export function Footer() {
+export async function Footer() {
   const whatsappNumber = env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+  const categoriesData = await serverFetch<{ categories: Category[] }>("/categories");
+  const initialCategories = categoriesData?.categories ?? [];
 
   const socialLinks = [
     { href: env.NEXT_PUBLIC_INSTAGRAM_URL, label: "Instagram", Icon: InstagramIcon },
@@ -79,7 +83,7 @@ export function Footer() {
         </FooterAccordionSection>
 
         <FooterAccordionSection title="Categories">
-          <FooterCategoriesList />
+          <FooterCategoriesList initialCategories={initialCategories} />
         </FooterAccordionSection>
 
         <FooterAccordionSection title="Customer Information">

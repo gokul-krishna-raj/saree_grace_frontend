@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "Terms & Conditions",
   description: "The terms that govern your use of the Saree Grace website and orders.",
   alternates: { canonical: "/terms-and-conditions" },
+  openGraph: {
+    title: "Terms & Conditions | Saree Grace",
+    description: "The terms that govern your use of the Saree Grace website and orders.",
+    url: "/terms-and-conditions",
+  },
 };
 
 export default function TermsPage() {

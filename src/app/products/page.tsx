@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { serverFetch } from "@/lib/serverApi";
-import type { Category } from "@/types";
+import type { Category, Product } from "@/types";
 
 import { ProductListingClient } from "./ProductListingClient";
 
@@ -35,11 +37,11 @@ export async function generateMetadata({ searchParams }: ProductsPageProps): Pro
       return {
         title,
         description,
-        alternates: { canonical: `/products?category=${cat.slug}` },
+        alternates: { canonical: `/categories/${cat.slug}` },
         openGraph: {
           title: `${title} | Saree Grace`,
           description,
-          url: `/products?category=${cat.slug}`,
+          url: `/categories/${cat.slug}`,
           images: cat.image?.url ? [{ url: cat.image.url }] : undefined,
         },
       };
@@ -60,17 +62,39 @@ export async function generateMetadata({ searchParams }: ProductsPageProps): Pro
       "Browse our complete collection of authentic Elampillai sarees, soft silks, handloom cottons, and bridal sarees. Direct from weavers.",
     alternates: { canonical: "/products" },
     openGraph: {
+      type: "website",
       title: "Shop Sarees — Saree Grace",
       description:
         "Browse our complete collection of authentic Elampillai sarees, soft silks, and handloom cottons.",
       url: "/products",
     },
+    twitter: {
+      card: "summary_large_image",
+      title: "Shop Sarees — Saree Grace",
+      description:
+        "Browse our complete collection of authentic Elampillai sarees, soft silks, and handloom cottons.",
+    },
   };
 }
 
-export default function ProductsPage() {
+export default async function ProductsPage({ searchParams }: ProductsPageProps) {
+  const params = await searchParams;
+  if (params.category) {
+    redirect(`/categories/${params.category}`);
+  }
+
+  // Pre-fetch the first page of products on the server so crawlers receive genuine HTML links
+  const initialData = await serverFetch<{ products: Product[] }>("/products?limit=12");
+  const initialProducts = initialData?.products ?? [];
+
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    { name: "Shop", url: "/products" },
+  ];
+
   return (
     <main className="flex-1 py-6">
+      <BreadcrumbJsonLd items={breadcrumbs} />
       <h1 className="font-heading text-maroon-900 px-4 pb-4 text-2xl">Shop Sarees</h1>
       <Suspense
         fallback={
@@ -80,7 +104,7 @@ export default function ProductsPage() {
           </div>
         }
       >
-        <ProductListingClient />
+        <ProductListingClient initialProducts={initialProducts} />
       </Suspense>
     </main>
   );

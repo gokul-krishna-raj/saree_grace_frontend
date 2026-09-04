@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
+
+export const metadata: Metadata = {
+  title: "Page Not Found (404)",
+  robots: { index: false, follow: false },
+};
 
 export default function NotFound() {
   return (

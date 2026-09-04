@@ -4,6 +4,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400,
+    deviceSizes: [360, 640, 768, 1024, 1280, 1536],
     // Product/category/review images are uploaded to Cloudinary by the backend
     // (BACKEND_CONTRACT.md) — `images.domains` is removed in Next 16, remotePatterns is
     // required regardless.

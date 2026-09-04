@@ -6,13 +6,19 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CategoryCard } from "@/components/category/CategoryCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useGetCategoriesQuery } from "@/store/api/categoriesApi";
+import type { Category } from "@/types";
 
-export function CategoryShowcase() {
+interface CategoryShowcaseProps {
+  initialCategories?: Category[];
+}
+
+export function CategoryShowcase({ initialCategories }: CategoryShowcaseProps = {}) {
   const { data: categories, isLoading, isError } = useGetCategoriesQuery(undefined);
-  const topLevel = categories?.filter((category) => category.parentCategory === null) ?? [];
+  const sourceCategories = categories ?? initialCategories;
+  const topLevel = sourceCategories?.filter((category) => category.parentCategory === null) ?? [];
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start", dragFree: true });
 
-  if (isLoading) {
+  if (isLoading && (!initialCategories || initialCategories.length === 0)) {
     return (
       <div className="flex gap-4 overflow-hidden px-4 py-2 sm:gap-6">
         {Array.from({ length: 8 }).map((_, index) => (

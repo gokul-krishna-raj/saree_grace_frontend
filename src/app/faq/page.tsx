@@ -3,10 +3,16 @@ import type { Metadata } from "next";
 import { env } from "@/lib/env";
 
 export const metadata: Metadata = {
-  title: "FAQ",
+  title: "Frequently Asked Questions",
   description:
     "Answers to common questions about ordering, payment, shipping, and returns at Saree Grace.",
   alternates: { canonical: "/faq" },
+  openGraph: {
+    title: "Frequently Asked Questions | Saree Grace",
+    description:
+      "Answers to common questions about ordering, payment, shipping, and returns at Saree Grace.",
+    url: "/faq",
+  },
 };
 
 const FAQS: Array<{ question: string; answer: string }> = [
@@ -47,8 +53,25 @@ const FAQS: Array<{ question: string; answer: string }> = [
 ];
 
 export default function FaqPage() {
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <h1 className="font-heading text-maroon-900 text-3xl">Frequently Asked Questions</h1>
       <p className="text-maroon-700 leading-relaxed">
         Everything you need to know about shopping for sarees online with Saree Grace.

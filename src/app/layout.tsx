@@ -12,6 +12,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { OrganizationJsonLd } from "@/components/seo/OrganizationJsonLd";
+import { WebSiteJsonLd } from "@/components/seo/WebSiteJsonLd";
 import { env } from "@/lib/env";
 import { StoreProvider } from "@/store/StoreProvider";
 
@@ -30,11 +31,42 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
   title: {
-    default: "Saree Grace — Elampillai sarees",
+    default: "Saree Grace — Authentic Elampillai Sarees",
     template: "%s | Saree Grace",
   },
   description:
-    "Authentic Elampillai sarees, handpicked for everyday elegance and special occasions.",
+    "Authentic Elampillai sarees, soft silks, handloom cottons, and bridal collections direct from Salem master weavers.",
+  alternates: {
+    canonical: "./",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: env.NEXT_PUBLIC_SITE_URL,
+    siteName: "Saree Grace",
+    title: "Saree Grace — Authentic Elampillai Sarees",
+    description:
+      "Authentic Elampillai sarees, soft silks, handloom cottons, and bridal collections direct from Salem master weavers.",
+    images: [
+      {
+        url: "/saree_grace_logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Saree Grace — Authentic Elampillai Sarees",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Saree Grace — Authentic Elampillai Sarees",
+    description:
+      "Authentic Elampillai sarees, soft silks, handloom cottons, and bridal collections direct from Salem master weavers.",
+    images: ["/saree_grace_logo.png"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/saree_grace_favicon.png",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -45,6 +77,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         suppressHydrationWarning
       >
         <OrganizationJsonLd />
+        <WebSiteJsonLd />
         <GoogleAnalytics />
         <WebVitals />
         <StoreProvider>
