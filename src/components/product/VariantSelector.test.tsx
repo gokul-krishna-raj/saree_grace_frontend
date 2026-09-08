@@ -119,4 +119,85 @@ describe("VariantSelector", () => {
     const blueButton = screen.getByRole("button", { name: /blue/i });
     expect(blueButton).toHaveAttribute("aria-pressed", "false");
   });
+
+  it("renders all 6 color variants when a product has 6 colors across variants with secondary attributes", async () => {
+    const onSelect = jest.fn();
+    const sixColorVariants: ProductVariant[] = [
+      {
+        _id: "v1",
+        sku: "SG-KP-SK-1011",
+        attributes: { color: "Cream", colorCode: "#bba995", border: "Blue" },
+        price: 1500,
+        stock: 10,
+        images: [],
+        isActive: true,
+      },
+      {
+        _id: "v2",
+        sku: "SS-KP-PK-1012",
+        attributes: { color: "pink", colorCode: "#e67382", border: "Blue" },
+        price: 1500,
+        stock: 10,
+        images: [],
+        isActive: true,
+      },
+      {
+        _id: "v3",
+        sku: "SS-KP-SL-1013",
+        attributes: { color: "Mustard yellow", colorCode: "#ad622b", border: "Maroon" },
+        price: 1500,
+        stock: 10,
+        images: [],
+        isActive: true,
+      },
+      {
+        _id: "v4",
+        sku: "SS-KP-RE-1014",
+        attributes: { color: "Ruby pink", colorCode: "#b0214d", border: "Green" },
+        price: 1500,
+        stock: 10,
+        images: [],
+        isActive: true,
+      },
+      {
+        _id: "v5",
+        sku: "SS-KP-BLE-1015",
+        attributes: { color: "Blue", colorCode: "#6e9897", border: "Ink blue" },
+        price: 1500,
+        stock: 10,
+        images: [],
+        isActive: true,
+      },
+      {
+        _id: "v6",
+        sku: "SS-KP-YLL-1016",
+        attributes: { color: "Yellow", colorCode: "#e6cf5d", border: "Blue" },
+        price: 1500,
+        stock: 10,
+        images: [],
+        isActive: true,
+      },
+    ];
+
+    render(
+      <VariantSelector
+        attributeNames={["color", "border"]}
+        variants={sixColorVariants}
+        selection={{ color: "Cream", border: "Blue" }}
+        onSelect={onSelect}
+      />,
+    );
+
+    // All 6 colors must be present in the document
+    expect(screen.getByRole("button", { name: /^cream$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^pink$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^mustard yellow$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^ruby pink$/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^blue$/i })).toHaveLength(2); // In color and border rows
+    expect(screen.getByRole("button", { name: /^yellow$/i })).toBeInTheDocument();
+
+    // Clicking Ruby pink (which was previously hidden due to border: Blue) must call onSelect
+    await userEvent.click(screen.getByRole("button", { name: /^ruby pink$/i }));
+    expect(onSelect).toHaveBeenCalledWith("color", "Ruby pink");
+  });
 });

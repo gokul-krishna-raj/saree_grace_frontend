@@ -68,9 +68,34 @@ export function findMatchingVariant(
   );
 }
 
-// Selecting a value for one attribute can invalidate a previously-chosen value for another
-// (e.g. picking a color that isn't offered in the currently-selected border width) — this
-// recomputes the whole selection so every attribute always points at a reachable value.
+/**
+ * Returns all distinct active values for an attribute across all active variants of a product.
+ * Ensures all variants (e.g. all 6 color variants) are always displayed to the shopper,
+ * regardless of what other attributes are currently selected.
+ */
+export function getAllAttributeValues(variants: ProductVariant[], attributeName: string): string[] {
+  const target = attributeName.trim().toLowerCase();
+  const values: string[] = [];
+  const seen = new Set<string>();
+
+  for (const variant of variants) {
+    if (!variant.isActive) continue;
+    const val = getAttrValue(variant.attributes, target);
+    if (val) {
+      const lower = val.trim().toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        values.push(val);
+      }
+    }
+  }
+
+  return values;
+}
+
+// Selecting a value for one attribute resolves the best matching active variant
+// (e.g. picking a color that has a specific border snaps the border to that variant's border)
+// — this guarantees every attribute selection always points at a reachable, valid variant.
 export function applySelection(
   variants: ProductVariant[],
   attributeNames: string[],
@@ -78,34 +103,57 @@ export function applySelection(
   changedAttribute: string,
   changedValue: string,
 ): AttributeSelection {
-  const next: AttributeSelection = { ...current, [changedAttribute]: changedValue };
-
   const changedAttrLower = changedAttribute.trim().toLowerCase();
+  const changedValLower = changedValue.trim().toLowerCase();
+
+  // Find all active variants that have the requested value for the changed attribute
+  const matchingVariants = variants.filter((variant) => {
+    if (!variant.isActive) return false;
+    const val = getAttrValue(variant.attributes, changedAttrLower);
+    return val !== undefined && val.trim().toLowerCase() === changedValLower;
+  });
+
+  if (matchingVariants.length > 0) {
+    // Score each candidate by how many other attributes it shares with the current selection
+    let bestVariant = matchingVariants[0];
+    let maxScore = -1;
+
+    for (const variant of matchingVariants) {
+      let score = 0;
+      for (const [key, value] of Object.entries(current)) {
+        if (key.trim().toLowerCase() === changedAttrLower) continue;
+        const variantVal = getAttrValue(variant.attributes, key);
+        if (
+          variantVal !== undefined &&
+          variantVal.trim().toLowerCase() === value.trim().toLowerCase()
+        ) {
+          score += 1;
+        }
+      }
+      if (score > maxScore) {
+        maxScore = score;
+        bestVariant = variant;
+      }
+    }
+
+    // Build complete attribute selection from best matching variant for all attributeNames
+    const result: AttributeSelection = {};
+    for (const name of attributeNames) {
+      const val = getAttrValue(bestVariant.attributes, name);
+      if (val) {
+        result[name] = val;
+      }
+    }
+    return result;
+  }
+
+  // Fallback: if no active variant matched, keep current selection with changed attribute
+  const next: AttributeSelection = { ...current, [changedAttribute]: changedValue };
   for (const key of Object.keys(next)) {
     if (key !== changedAttribute && key.trim().toLowerCase() === changedAttrLower) {
       delete next[key];
     }
   }
-
-  for (const name of attributeNames) {
-    if (name.trim().toLowerCase() === changedAttrLower) continue;
-    const availableForName = getAvailableValues(variants, name, next);
-    const currentValue = getAttrValue(next, name);
-    const isCurrentValueAvailable =
-      currentValue !== undefined &&
-      availableForName.some(
-        (v) => v === currentValue || v.trim().toLowerCase() === currentValue.trim().toLowerCase(),
-      );
-
-    if (!isCurrentValueAvailable) {
-      if (availableForName.length > 0) {
-        next[name] = availableForName[0];
-      } else {
-        delete next[name];
-      }
-    }
-  }
-
   return next;
 }
 

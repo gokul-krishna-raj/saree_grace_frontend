@@ -42,7 +42,13 @@ export function selectableAttributeNames(attributeNames: string[]): string[] {
       result.push(trimmed);
     }
   }
-  return result;
+  return result.sort((a, b) => {
+    const aColor = isColorAttribute(a);
+    const bColor = isColorAttribute(b);
+    if (aColor && !bColor) return -1;
+    if (!aColor && bColor) return 1;
+    return 0;
+  });
 }
 
 // Attribute keys are whatever an admin typed into `variantAttributeNames`

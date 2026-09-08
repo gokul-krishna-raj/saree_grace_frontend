@@ -3,6 +3,7 @@ import type { ProductVariant } from "@/types";
 import {
   applySelection,
   findMatchingVariant,
+  getAllAttributeValues,
   getAvailableValues,
   getDefaultSelection,
 } from "./variantSelection";
@@ -163,5 +164,121 @@ describe("case-insensitive attribute handling", () => {
       "Gold",
     );
     expect(next).toEqual({ Color: "Gold", Border: "Thread" });
+  });
+});
+
+describe("getAllAttributeValues & 6 color variants handling", () => {
+  // Simulates real Kubera Silk Sarees product with 6 distinct colorways and differing borders
+  const sixColorVariants: ProductVariant[] = [
+    {
+      _id: "v1",
+      sku: "SG-KP-SK-1011",
+      attributes: { color: "Cream", colorCode: "#bba995", border: "Blue" },
+      price: 1500,
+      stock: 10,
+      images: [],
+      isActive: true,
+    },
+    {
+      _id: "v2",
+      sku: "SS-KP-PK-1012",
+      attributes: { color: "pink", colorCode: "#e67382", border: "Blue" },
+      price: 1500,
+      stock: 10,
+      images: [],
+      isActive: true,
+    },
+    {
+      _id: "v3",
+      sku: "SS-KP-SL-1013",
+      attributes: { color: "Mustard yellow", colorCode: "#ad622b", border: "Maroon" },
+      price: 1500,
+      stock: 10,
+      images: [],
+      isActive: true,
+    },
+    {
+      _id: "v4",
+      sku: "SS-KP-RE-1014",
+      attributes: { color: "Ruby pink", colorCode: "#b0214d", border: "Green" },
+      price: 1500,
+      stock: 10,
+      images: [],
+      isActive: true,
+    },
+    {
+      _id: "v5",
+      sku: "SS-KP-BLE-1015",
+      attributes: { color: "Blue", colorCode: "#6e9897", border: "Ink blue" },
+      price: 1500,
+      stock: 10,
+      images: [],
+      isActive: true,
+    },
+    {
+      _id: "v6",
+      sku: "SS-KP-YLL-1016",
+      attributes: { color: "Yellow", colorCode: "#e6cf5d", border: "Blue" },
+      price: 1500,
+      stock: 10,
+      images: [],
+      isActive: true,
+    },
+  ];
+
+  it("returns all 6 color variants without filtering out colors from differing secondary attributes", () => {
+    const colors = getAllAttributeValues(sixColorVariants, "color");
+    expect(colors).toHaveLength(6);
+    expect(colors).toEqual(["Cream", "pink", "Mustard yellow", "Ruby pink", "Blue", "Yellow"]);
+  });
+
+  it("returns all 4 border values without filtering", () => {
+    const borders = getAllAttributeValues(sixColorVariants, "border");
+    expect(borders).toHaveLength(4);
+    expect(borders).toEqual(["Blue", "Maroon", "Green", "Ink blue"]);
+  });
+
+  it("switches to Ruby pink and automatically resolves its corresponding Green border", () => {
+    const initialSelection = { color: "Cream", border: "Blue" };
+    const nextSelection = applySelection(
+      sixColorVariants,
+      ["color", "border"],
+      initialSelection,
+      "color",
+      "Ruby pink",
+    );
+    expect(nextSelection).toEqual({ color: "Ruby pink", border: "Green" });
+
+    const matched = findMatchingVariant(sixColorVariants, ["color", "border"], nextSelection);
+    expect(matched?._id).toBe("v4");
+    expect(matched?.sku).toBe("SS-KP-RE-1014");
+  });
+
+  it("switches to Mustard yellow and automatically resolves its corresponding Maroon border", () => {
+    const initialSelection = { color: "Cream", border: "Blue" };
+    const nextSelection = applySelection(
+      sixColorVariants,
+      ["color", "border"],
+      initialSelection,
+      "color",
+      "Mustard yellow",
+    );
+    expect(nextSelection).toEqual({ color: "Mustard yellow", border: "Maroon" });
+
+    const matched = findMatchingVariant(sixColorVariants, ["color", "border"], nextSelection);
+    expect(matched?._id).toBe("v3");
+    expect(matched?.sku).toBe("SS-KP-SL-1013");
+  });
+
+  it("switches to Blue border and automatically resolves to Cream or Yellow", () => {
+    const initialSelection = { color: "Mustard yellow", border: "Maroon" };
+    const nextSelection = applySelection(
+      sixColorVariants,
+      ["color", "border"],
+      initialSelection,
+      "border",
+      "Green",
+    );
+    expect(nextSelection).toEqual({ color: "Ruby pink", border: "Green" });
   });
 });

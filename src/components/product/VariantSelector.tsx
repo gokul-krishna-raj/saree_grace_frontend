@@ -2,7 +2,11 @@
 
 import { cn } from "@/lib/cn";
 import { getColorCodeValue, isColorAttribute } from "@/lib/colorCode";
-import { type AttributeSelection, getAttrValue, getAvailableValues } from "@/lib/variantSelection";
+import {
+  type AttributeSelection,
+  getAllAttributeValues,
+  getAttrValue,
+} from "@/lib/variantSelection";
 import type { ProductVariant } from "@/types";
 
 // A "color" row gets a swatch dot sourced from the matching variant's
@@ -36,7 +40,7 @@ export function VariantSelector({
   return (
     <div className="flex flex-col gap-4">
       {attributeNames.map((attributeName) => {
-        const availableValues = getAvailableValues(variants, attributeName, selection);
+        const availableValues = getAllAttributeValues(variants, attributeName);
         const selectedValue = getAttrValue(selection, attributeName);
         return (
           <div key={attributeName} className="flex flex-col gap-2">
