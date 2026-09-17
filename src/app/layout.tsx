@@ -74,7 +74,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable} h-full antialiased`}>
       <body
-        className="bg-cream font-body text-maroon-900 flex min-h-full flex-col pb-14 lg:pb-0"
+        className="bg-background font-body text-foreground flex min-h-full flex-col pb-14 lg:pb-0"
         suppressHydrationWarning
       >
         <OrganizationJsonLd />

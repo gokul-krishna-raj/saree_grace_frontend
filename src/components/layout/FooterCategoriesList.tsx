@@ -41,7 +41,7 @@ export function FooterCategoriesList({ initialCategories }: FooterCategoriesList
         <Link
           key={category._id}
           href={`/categories/${category.slug}`}
-          className="text-maroon-700 hover:text-maroon-900 text-sm"
+          className="text-primary-foreground/75 hover:text-primary-foreground text-sm transition-colors hover:underline"
         >
           {category.name}
         </Link>

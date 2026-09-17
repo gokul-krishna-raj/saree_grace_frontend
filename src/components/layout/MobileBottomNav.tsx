@@ -34,7 +34,7 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="border-maroon-100 fixed inset-x-0 bottom-0 z-30 flex border-t bg-white lg:hidden"
+      className="border-border bg-card/95 fixed inset-x-0 bottom-0 z-50 flex h-16 border-t backdrop-blur-md lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       {items.map(({ href, label, icon: Icon, count }) => {
@@ -45,14 +45,19 @@ export function MobileBottomNav() {
             href={href}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-xs",
-              isActive ? "text-maroon-900" : "text-maroon-400",
+              "relative flex h-full flex-1 flex-col items-center justify-center gap-1 text-xs transition-colors",
+              isActive
+                ? "text-primary font-semibold"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
+            {isActive ? (
+              <span className="bg-primary absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full" />
+            ) : null}
             <Icon className="h-5 w-5" aria-hidden="true" />
-            {label}
+            <span>{label}</span>
             {count && count > 0 ? (
-              <span className="bg-gold-500 absolute top-1 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold text-white">
+              <span className="bg-primary text-primary-foreground absolute top-1.5 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold shadow-xs">
                 {count}
               </span>
             ) : null}

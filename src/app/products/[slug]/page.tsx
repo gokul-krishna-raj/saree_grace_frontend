@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
@@ -188,6 +189,47 @@ export default async function ProductDetailPage({ params }: PageProps<"/products
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <BreadcrumbJsonLd items={breadcrumbs} />
+
+      {/* Visible Breadcrumb Trail matching shastik_fashion */}
+      <nav className="mx-auto max-w-6xl px-4 py-4" aria-label="Breadcrumb">
+        <ol className="text-muted-foreground flex items-center gap-2 overflow-hidden text-sm">
+          <li className="shrink-0">
+            <Link href="/" className="hover:text-primary transition-colors">
+              Home
+            </Link>
+          </li>
+          <li className="shrink-0" aria-hidden="true">
+            /
+          </li>
+          <li className="shrink-0">
+            <Link href="/products" className="hover:text-primary transition-colors">
+              Shop
+            </Link>
+          </li>
+          {categoryName && categorySlug ? (
+            <>
+              <li className="shrink-0" aria-hidden="true">
+                /
+              </li>
+              <li className="shrink-0">
+                <Link
+                  href={`/categories/${categorySlug}`}
+                  className="hover:text-primary transition-colors"
+                >
+                  {categoryName}
+                </Link>
+              </li>
+            </>
+          ) : null}
+          <li className="shrink-0" aria-hidden="true">
+            /
+          </li>
+          <li className="text-foreground truncate font-medium" aria-current="page">
+            {product.name}
+          </li>
+        </ol>
+      </nav>
+
       <ProductDetailClient product={product} />
       <ReviewsSection productId={product._id} />
       <RelatedProducts

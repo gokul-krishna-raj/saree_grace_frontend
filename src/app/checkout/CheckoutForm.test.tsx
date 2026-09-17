@@ -84,9 +84,12 @@ describe("CheckoutForm", () => {
     await userEvent.click(screen.getByRole("button", { name: "Place order & pay" }));
 
     await waitFor(() => expect(createOrderMock).toHaveBeenCalledTimes(1));
-    expect(createOrderMock).toHaveBeenCalledWith({
-      shippingAddress: expect.objectContaining({ fullName: "Priya Raman", city: "Chennai" }),
-    });
+    expect(createOrderMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        shippingAddress: expect.objectContaining({ fullName: "Priya Raman", city: "Chennai" }),
+        paymentMethod: "razorpay",
+      }),
+    );
     await waitFor(() =>
       expect(payForOrderMock).toHaveBeenCalledWith({ _id: "order1", orderNumber: "SG-1" }),
     );

@@ -1,75 +1,96 @@
 "use client";
 
-import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 import { ProductCard } from "@/components/product/ProductCard";
+import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useGetProductsQuery } from "@/store/api/productsApi";
 import type { Product } from "@/types";
 
 interface FeaturedCarouselProps {
   initialProducts?: Product[];
+  title?: string;
+  subtitle?: string;
+  eyebrow?: string;
+  viewAllHref?: string;
 }
 
-export function FeaturedCarousel({ initialProducts }: FeaturedCarouselProps = {}) {
+export function FeaturedCarousel({
+  initialProducts,
+  title = "New Arrivals",
+  subtitle = "Explore the latest handloom and bridal additions to our collection",
+  eyebrow = "Just Arrived",
+  viewAllHref = "/products?sort=newest",
+}: FeaturedCarouselProps = {}) {
   const { data, isLoading, isError } = useGetProductsQuery({ sort: "newest", limit: 8 });
   const products = data?.products ?? initialProducts ?? [];
-  const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start", dragFree: true });
-
-  if (isLoading && (!initialProducts || initialProducts.length === 0)) {
-    return (
-      <div className="flex gap-4 overflow-hidden px-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-64 w-48 shrink-0" />
-        ))}
-      </div>
-    );
-  }
-
-  if (isError && products.length === 0) {
-    return (
-      <p className="text-maroon-600 px-4 text-center text-sm">
-        Couldn&apos;t load new arrivals right now. Please try again shortly.
-      </p>
-    );
-  }
-
-  if (!products.length) {
-    return (
-      <p className="text-maroon-600 px-4 text-center text-sm">
-        New arrivals are on their way — check back soon.
-      </p>
-    );
-  }
+  const displayProducts = products.slice(0, 4);
 
   return (
-    <div className="relative">
-      <div ref={emblaRef} className="overflow-hidden px-4">
-        <div className="flex gap-4">
-          {products.map((product) => (
-            <div key={product._id} className="w-48 shrink-0 sm:w-56">
-              <ProductCard product={product} />
-            </div>
-          ))}
+    <section className="bg-cream/40 py-12 lg:py-20">
+      <div className="mx-auto max-w-6xl px-4">
+        {/* Section Header */}
+        <div className="mb-10 flex flex-col justify-between md:mb-12 md:flex-row md:items-end">
+          <div>
+            <span className="text-accent text-xs font-semibold tracking-wider uppercase sm:text-sm">
+              {eyebrow}
+            </span>
+            <h2 className="font-display text-foreground mt-2 text-3xl font-bold lg:text-4xl">
+              {title}
+            </h2>
+            {subtitle ? (
+              <p className="text-muted-foreground mt-2 text-sm sm:text-base">{subtitle}</p>
+            ) : null}
+          </div>
+          <Button asChild variant="ghost" className="group mt-4 w-fit md:mt-0">
+            <Link href={viewAllHref}>
+              View All
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </Button>
+        </div>
+
+        {/* Products Grid */}
+        {isLoading && (!initialProducts || initialProducts.length === 0) ? (
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-[3/4] w-full rounded-xl" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-5 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : isError && !displayProducts.length ? (
+          <div className="text-muted-foreground col-span-full py-12 text-center text-sm">
+            Couldn&apos;t load new arrivals right now. Please try again shortly.
+          </div>
+        ) : !displayProducts.length ? (
+          <div className="text-muted-foreground col-span-full py-12 text-center text-sm">
+            New arrivals are on their way — check back soon.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+            {displayProducts.map((product) => (
+              <ProductCard key={product._id} product={product} />
+            ))}
+          </div>
+        )}
+
+        {/* Mobile CTA */}
+        <div className="mt-8 text-center md:hidden">
+          <Button variant="ghost" asChild className="group">
+            <Link href={viewAllHref}>
+              View All New Arrivals
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </Button>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={() => emblaApi?.scrollPrev()}
-        aria-label="Previous"
-        className="absolute top-1/2 left-1 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-sm sm:flex"
-      >
-        <ChevronLeft className="text-maroon-700 h-5 w-5" aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        onClick={() => emblaApi?.scrollNext()}
-        aria-label="Next"
-        className="absolute top-1/2 right-1 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-sm sm:flex"
-      >
-        <ChevronRight className="text-maroon-700 h-5 w-5" aria-hidden="true" />
-      </button>
-    </div>
+    </section>
   );
 }
+
+export { FeaturedCarousel as FeaturedProducts, FeaturedCarousel as NewArrivals };

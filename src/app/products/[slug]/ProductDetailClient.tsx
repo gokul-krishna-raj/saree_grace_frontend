@@ -1,21 +1,74 @@
 "use client";
 
-import { Heart, ShieldCheck } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { RefreshCw, Shield, Truck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AddToCartControls } from "@/components/product/AddToCartControls";
 import { ImageGallery } from "@/components/product/ImageGallery";
 import { ProductDescription } from "@/components/product/ProductDescription";
 import { VariantSelector } from "@/components/product/VariantSelector";
-import { Badge } from "@/components/ui/Badge";
 import { useWishlistToggle } from "@/hooks/useWishlistToggle";
 import { trackViewItem } from "@/lib/analytics";
-import { cn } from "@/lib/cn";
 import { selectableAttributeNames } from "@/lib/colorCode";
 import { formatPrice } from "@/lib/formatPrice";
-import { applySelection, findMatchingVariant, getDefaultSelection } from "@/lib/variantSelection";
-import type { Occasion, Product } from "@/types";
+import {
+  applySelection,
+  findMatchingVariant,
+  getAttrValue,
+  getDefaultSelection,
+} from "@/lib/variantSelection";
+import type { Occasion, Product, ProductImage, ProductVariant } from "@/types";
+
+function getImagesForSelection(
+  product: Product,
+  variants: ProductVariant[],
+  activeVariant: ProductVariant | undefined,
+  selection: Record<string, string>,
+): ProductImage[] {
+  if (product.type !== "variant") {
+    return product.images ?? [];
+  }
+
+  // Find the selected color attribute value, if any
+  const selectedColor = getAttrValue(selection, "color");
+
+  // Collect images strictly for the selected color / active variant
+  if (selectedColor) {
+    const matchingVariants = variants.filter(
+      (v) =>
+        v.isActive &&
+        getAttrValue(v.attributes, "color")?.trim().toLowerCase() ===
+          selectedColor.trim().toLowerCase(),
+    );
+
+    const colorImages: ProductImage[] = [];
+    const seenUrls = new Set<string>();
+
+    // Prioritize activeVariant's images first if activeVariant matches
+    const priorityVariants = activeVariant
+      ? [activeVariant, ...matchingVariants.filter((v) => v._id !== activeVariant._id)]
+      : matchingVariants;
+
+    for (const v of priorityVariants) {
+      for (const img of v.images ?? []) {
+        if (img?.url && !seenUrls.has(img.url)) {
+          seenUrls.add(img.url);
+          colorImages.push(img);
+        }
+      }
+    }
+
+    if (colorImages.length > 0) {
+      return colorImages;
+    }
+  } else if (activeVariant?.images && activeVariant.images.length > 0) {
+    return activeVariant.images;
+  }
+
+  // Fall back to top-level product images if no variant-specific images exist for this color,
+  // but NEVER mix images from other colors!
+  return product.images ?? [];
+}
 
 export function ProductDetailClient({ product }: { product: Product }) {
   // Fall back to collecting attribute keys from variant items if variantAttributeNames is missing or empty
@@ -28,13 +81,14 @@ export function ProductDetailClient({ product }: { product: Product }) {
   // "colorCode" (when an admin included it in variantAttributeNames) is metadata for a swatch,
   // not a dimension a shopper picks — excluded here so selection/matching never requires it.
   const attributeNames = selectableAttributeNames(rawAttributeNames);
-  const variants = product.variants ?? [];
+  const variants = useMemo(() => product.variants ?? [], [product.variants]);
   // Only entries the API actually populated (not just an ObjectId string) can be shown —
   // rendering a raw id would be a meaningless label and a broken link.
   const occasions = (product.occasions ?? []).filter(
     (occasion): occasion is Occasion => typeof occasion !== "string",
   );
   const [selection, setSelection] = useState(() => getDefaultSelection(variants, attributeNames));
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { isWishlisted, toggle, isLoading: isWishlistLoading } = useWishlistToggle(product._id);
 
   useEffect(() => {
@@ -49,113 +103,131 @@ export function ProductDetailClient({ product }: { product: Product }) {
       : undefined;
   const requiresVariantSelection = product.type === "variant" && !activeVariant;
 
-  const images =
-    product.type === "variant"
-      ? activeVariant?.images && activeVariant.images.length > 0
-        ? activeVariant.images
-        : (variants[0]?.images ?? [])
-      : (product.images ?? []);
+  const images = useMemo(
+    () => getImagesForSelection(product, variants, activeVariant, selection),
+    [product, variants, activeVariant, selection],
+  );
   const price =
     product.type === "variant"
       ? (activeVariant?.price ?? product.startingPrice)
       : (product.price ?? 0);
   const compareAtPrice =
     product.type === "variant" ? activeVariant?.compareAtPrice : product.compareAtPrice;
+  const discountPercent =
+    compareAtPrice && compareAtPrice > price ? Math.round((1 - price / compareAtPrice) * 100) : 0;
+
+  const categoryName =
+    typeof product.category === "object" && product.category?.name
+      ? product.category.name
+      : undefined;
 
   function handleSelect(attributeName: string, value: string) {
     setSelection((current) =>
       applySelection(variants, attributeNames, current, attributeName, value),
     );
+    // Reset image index to primary variant image when switching variants
+    setSelectedImageIndex(0);
   }
 
   return (
-    <div className="grid gap-8 px-4 py-6 lg:grid-cols-2 lg:gap-12">
-      <ImageGallery images={images} alt={product.name} />
-
-      <div className="flex flex-col gap-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            {product.isHandloom ? (
-              <Badge variant="gold" className="mb-2 w-fit">
-                Handloom
-              </Badge>
-            ) : null}
-            <h1 className="font-heading text-maroon-900 text-2xl sm:text-3xl">{product.name}</h1>
-            {product.fabric || product.color ? (
-              <p className="text-maroon-600 mt-1 text-sm">
-                {[product.fabric, product.color].filter(Boolean).join(" · ")}
-              </p>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={toggle}
-            disabled={isWishlistLoading}
-            aria-pressed={isWishlisted}
-            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-            className="border-maroon-100 text-maroon-700 hover:bg-maroon-50 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border"
-          >
-            <Heart
-              className={cn("h-5 w-5", isWishlisted && "fill-maroon-700 text-maroon-700")}
-              aria-hidden="true"
-            />
-          </button>
-        </div>
-
-        <div className="flex items-baseline gap-2">
-          <span className="font-heading text-maroon-900 text-2xl">{formatPrice(price)}</span>
-          {compareAtPrice && compareAtPrice > price ? (
-            <span className="text-maroon-400 text-base line-through">
-              {formatPrice(compareAtPrice)}
-            </span>
-          ) : null}
-        </div>
-
-        {product.type === "variant" ? (
-          <VariantSelector
-            attributeNames={attributeNames}
-            variants={variants}
-            selection={selection}
-            onSelect={handleSelect}
-          />
-        ) : null}
-
-        <AddToCartControls
-          product={product}
-          variant={activeVariant}
-          requiresVariantSelection={requiresVariantSelection}
+    <div className="mx-auto max-w-6xl px-4 py-4 sm:py-8">
+      <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+        {/* Left Column: Image Gallery */}
+        <ImageGallery
+          images={images}
+          alt={product.name}
+          isHandloom={product.isHandloom}
+          discountPercent={discountPercent}
+          isWishlisted={isWishlisted}
+          onWishlistToggle={toggle}
+          isWishlistLoading={isWishlistLoading}
+          selectedIndex={selectedImageIndex}
+          onSelectImage={setSelectedImageIndex}
         />
 
-        <ProductDescription description={product.description} />
-
-        {occasions.length > 0 ? (
+        {/* Right Column: Product Information & Purchase Actions */}
+        <div className="flex flex-col gap-5 sm:gap-6">
           <div>
-            <h2 className="text-maroon-900 text-sm font-medium">Occasions</h2>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {occasions.map((occasion) => (
-                <Link key={occasion._id} href={`/products?occasion=${occasion._id}`}>
-                  <Badge variant="outline" className="hover:bg-maroon-50">
-                    {occasion.name}
-                  </Badge>
-                </Link>
-              ))}
+            {categoryName ? (
+              <p className="text-accent mb-2 text-xs font-semibold tracking-wider uppercase sm:text-sm">
+                {categoryName}
+              </p>
+            ) : null}
+            <h1 className="font-display text-foreground mb-3 text-2xl font-bold sm:mb-4 sm:text-3xl lg:text-4xl">
+              {product.name}
+            </h1>
+            <div className="flex flex-wrap items-baseline gap-2.5 sm:gap-3">
+              <span className="text-primary text-2xl font-bold tabular-nums sm:text-3xl">
+                {formatPrice(price)}
+              </span>
+              {compareAtPrice && compareAtPrice > price ? (
+                <span className="text-muted-foreground text-base tabular-nums line-through sm:text-lg">
+                  {formatPrice(compareAtPrice)}
+                </span>
+              ) : null}
+              {discountPercent > 0 ? (
+                <span className="bg-destructive/10 text-destructive rounded-full px-2.5 py-0.5 text-xs font-semibold sm:text-sm">
+                  {discountPercent}% OFF
+                </span>
+              ) : null}
             </div>
           </div>
-        ) : null}
 
-        <div className="bg-maroon-50 flex items-start gap-3 rounded-lg p-4">
-          <ShieldCheck className="text-maroon-700 mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-          <div className="text-maroon-800 text-sm">
-            <p className="font-medium">
-              {product.isHandloom ? "Certified handloom weave" : "Care & authenticity"}
-            </p>
-            <p className="text-maroon-600 mt-1">
-              {product.isHandloom
-                ? "Hand-woven on a traditional loom in Elampillai — small variations in weave and colour are part of the handmade craft, not a defect."
-                : "Made with care using quality materials."}{" "}
-              Dry clean recommended for silk; hand-wash cold and line-dry in shade for cotton.
-            </p>
+          {/* Variant / Color Selectors */}
+          {product.type === "variant" ? (
+            <VariantSelector
+              attributeNames={attributeNames}
+              variants={variants}
+              selection={selection}
+              onSelect={handleSelect}
+            />
+          ) : null}
+
+          {/* Add to Cart + Buy Now Controls */}
+          <AddToCartControls
+            product={product}
+            variant={activeVariant}
+            requiresVariantSelection={requiresVariantSelection}
+          />
+
+          {/* USPs / Trust Badges */}
+          <div className="border-border my-2 grid grid-cols-3 gap-2 border-y py-6 sm:my-3 sm:gap-4 sm:py-8">
+            <div className="group text-center">
+              <div className="bg-accent/10 text-accent group-hover:bg-accent/20 mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:h-12 sm:w-12">
+                <Truck className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase sm:text-xs">
+                Fast Delivery
+              </p>
+            </div>
+            <div className="group text-center">
+              <div className="bg-accent/10 text-accent group-hover:bg-accent/20 mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:h-12 sm:w-12">
+                <Shield className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase sm:text-xs">
+                Authentic Product
+              </p>
+            </div>
+            <div className="group text-center">
+              <div className="bg-accent/10 text-accent group-hover:bg-accent/20 mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:h-12 sm:w-12">
+                <RefreshCw className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase sm:text-xs">
+                Easy Returns
+              </p>
+            </div>
           </div>
+
+          {/* Product Highlights Card */}
+          <ProductDescription
+            title="Product Highlights"
+            description={product.description}
+            fabric={product.fabric}
+            color={product.color}
+            isHandloom={product.isHandloom}
+            occasions={occasions}
+            sku={activeVariant?.sku || product.sku}
+          />
         </div>
       </div>
     </div>

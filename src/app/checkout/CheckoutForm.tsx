@@ -78,7 +78,10 @@ export function CheckoutForm() {
     setSubmitError(null);
     setIsSubmitting(true);
     try {
-      const order = await createOrder({ shippingAddress: values }).unwrap();
+      const order = await createOrder({
+        shippingAddress: values,
+        paymentMethod: "razorpay",
+      }).unwrap();
       // From here on, the order exists (stock decremented, cart cleared server-side) —
       // payForOrder only handles the payment attempt for it, never re-creates it.
       await payForOrder(order);

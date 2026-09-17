@@ -16,7 +16,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label ? (
-          <label htmlFor={selectId} className="text-maroon-900 text-sm font-medium">
+          <label htmlFor={selectId} className="text-foreground text-sm font-medium">
             {label}
           </label>
         ) : null}
@@ -25,9 +25,10 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={selectId}
             className={cn(
-              "border-maroon-100 text-maroon-900 h-11 w-full appearance-none rounded-lg border bg-white px-3.5 pr-10 text-base",
-              "focus-visible:outline-maroon-600 focus-visible:outline-2 focus-visible:outline-offset-2",
-              error && "border-red-500 focus-visible:outline-red-500",
+              "border-input bg-card text-foreground ring-offset-background h-11 w-full appearance-none rounded-lg border px-3.5 pr-10 text-base transition-colors",
+              "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+              "disabled:cursor-not-allowed disabled:opacity-50",
+              error && "border-destructive focus-visible:ring-destructive",
               className,
             )}
             aria-invalid={error ? true : undefined}
@@ -36,12 +37,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             {children}
           </select>
           <ChevronDown
-            className="text-maroon-600 pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2"
+            className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2"
             aria-hidden="true"
           />
         </div>
         {error ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-destructive text-sm">
             {error}
           </p>
         ) : null}

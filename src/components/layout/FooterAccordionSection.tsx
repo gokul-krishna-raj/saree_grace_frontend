@@ -18,12 +18,12 @@ export function FooterAccordionSection({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border-maroon-50 border-b py-4 sm:border-none sm:py-0">
+    <div className="border-primary-foreground/15 border-b py-4 sm:border-none sm:py-0">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
-        className="text-maroon-900 flex w-full items-center justify-between text-sm font-medium sm:pointer-events-none sm:mb-3"
+        className="text-primary-foreground flex w-full items-center justify-between text-sm font-semibold sm:pointer-events-none sm:mb-3"
       >
         {title}
         <ChevronDown

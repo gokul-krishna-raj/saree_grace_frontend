@@ -18,7 +18,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label ? (
-          <label htmlFor={inputId} className="text-maroon-900 text-sm font-medium">
+          <label htmlFor={inputId} className="text-foreground text-sm font-medium">
             {label}
           </label>
         ) : null}
@@ -26,9 +26,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            "border-maroon-100 text-maroon-900 placeholder:text-maroon-400/70 h-11 rounded-lg border bg-white px-3.5 text-base",
-            "focus-visible:outline-maroon-600 focus-visible:outline-2 focus-visible:outline-offset-2",
-            error && "border-red-500 focus-visible:outline-red-500",
+            "border-input bg-card text-foreground placeholder:text-muted-foreground ring-offset-background flex h-11 w-full rounded-lg border px-3.5 text-base transition-colors",
+            "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            error && "border-destructive focus-visible:ring-destructive",
             className,
           )}
           aria-invalid={error ? true : undefined}
@@ -36,11 +37,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {error ? (
-          <p id={errorId} role="alert" className="text-sm text-red-600">
+          <p id={errorId} role="alert" className="text-destructive text-sm">
             {error}
           </p>
         ) : hint ? (
-          <p id={hintId} className="text-maroon-600/80 text-sm">
+          <p id={hintId} className="text-muted-foreground text-sm">
             {hint}
           </p>
         ) : null}

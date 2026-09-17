@@ -3,20 +3,27 @@ import { type HTMLAttributes } from "react";
 
 import { cn } from "@/lib/cn";
 
-const badgeVariants = cva("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium", {
-  variants: {
-    variant: {
-      maroon: "bg-maroon-50 text-maroon-700",
-      // text-maroon-900, not text-gold-600 — measured 3.28:1 (needs 4.5:1) via a real
-      // Lighthouse audit even with the darkest gold text shade; maroon-900 on gold-100 keeps
-      // the gold accent while actually passing contrast (Section 14/16).
-      gold: "bg-gold-100 text-maroon-900",
-      outline: "border border-maroon-200 text-maroon-700",
-      danger: "bg-red-50 text-red-600",
+export const badgeVariants = cva(
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+        maroon: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+        danger:
+          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+        outline: "border-border text-foreground",
+        gold: "border-gold/40 bg-gold-100 text-maroon-900 font-semibold shadow-xs",
+        royal: "border-transparent bg-royal text-primary-foreground",
+      },
     },
+    defaultVariants: { variant: "default" },
   },
-  defaultVariants: { variant: "maroon" },
-});
+);
 
 export interface BadgeProps
   extends HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {}

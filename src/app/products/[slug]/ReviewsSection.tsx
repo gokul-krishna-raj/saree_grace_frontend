@@ -40,39 +40,55 @@ export function ReviewsSection({ productId }: { productId: string }) {
     : 0;
 
   return (
-    <section className="px-4 py-8">
-      <h2 className="font-heading text-maroon-900 mb-4 text-xl">Reviews</h2>
+    <section className="border-border/40 mx-auto max-w-6xl border-t px-4 py-12">
+      <h2 className="font-display text-foreground mb-6 text-2xl font-bold">Customer Reviews</h2>
 
       {isLoading ? (
-        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full rounded-xl" />
       ) : reviews.length === 0 ? (
-        <p className="text-maroon-600 text-sm">
+        <p className="text-muted-foreground text-sm">
           No reviews yet — be the first to share your experience.
         </p>
       ) : (
-        <div className="mb-6 flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-heading text-maroon-900 text-2xl">{avgRating.toFixed(1)}</span>
-            <Star className="fill-gold-600 text-gold-600 h-5 w-5" aria-hidden="true" />
-            <span className="text-maroon-600 text-sm">({reviews.length} reviews)</span>
+        <div className="bg-muted/30 border-border/40 mb-6 flex flex-col gap-3 rounded-2xl border p-6 sm:max-w-md">
+          <div className="flex items-center gap-3">
+            <span className="font-display text-foreground text-3xl font-bold">
+              {avgRating.toFixed(1)}
+            </span>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Star
+                  key={index}
+                  className={cn(
+                    "h-5 w-5",
+                    index < Math.round(avgRating) ? "fill-accent text-accent" : "text-muted",
+                  )}
+                  aria-hidden="true"
+                />
+              ))}
+            </div>
+            <span className="text-muted-foreground text-sm">({reviews.length} reviews)</span>
           </div>
           {ratingCounts.map(({ star, count }) => (
-            <div key={star} className="text-maroon-600 flex items-center gap-2 text-sm">
-              <span className="w-14">{star} star</span>
-              <div className="bg-maroon-50 h-2 flex-1 rounded-full">
+            <div
+              key={star}
+              className="text-muted-foreground flex items-center gap-2 text-xs font-medium"
+            >
+              <span className="w-12">{star} star</span>
+              <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
                 <div
-                  className="bg-gold-500 h-2 rounded-full"
+                  className="bg-accent h-2 rounded-full transition-all"
                   style={{ width: `${reviews.length ? (count / reviews.length) * 100 : 0}%` }}
                 />
               </div>
-              <span className="w-6 text-right">{count}</span>
+              <span className="w-6 text-right tabular-nums">{count}</span>
             </div>
           ))}
         </div>
       )}
 
       {eligibleOrder && !showForm ? (
-        <Button variant="secondary" onClick={() => setShowForm(true)}>
+        <Button variant="outline" onClick={() => setShowForm(true)} className="mb-6">
           Write a review
         </Button>
       ) : null}
@@ -86,23 +102,25 @@ export function ReviewsSection({ productId }: { productId: string }) {
 
       <ul className="mt-6 flex flex-col gap-4">
         {reviews.map((review) => (
-          <li key={review._id} className="border-maroon-50 rounded-lg border p-4">
+          <li key={review._id} className="border-border/60 bg-card rounded-xl border p-5 shadow-xs">
             <div className="flex items-center gap-2">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <Star
-                  key={index}
-                  className={cn(
-                    "h-4 w-4",
-                    index < review.rating ? "fill-gold-600 text-gold-600" : "text-maroon-100",
-                  )}
-                  aria-hidden="true"
-                />
-              ))}
-              <span className="text-maroon-900 text-sm font-medium">
+              <div className="flex items-center gap-0.5">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Star
+                    key={index}
+                    className={cn(
+                      "h-4 w-4",
+                      index < review.rating ? "fill-accent text-accent" : "text-muted",
+                    )}
+                    aria-hidden="true"
+                  />
+                ))}
+              </div>
+              <span className="text-foreground text-sm font-semibold">
                 {typeof review.user === "string" ? "Verified buyer" : review.user.name}
               </span>
             </div>
-            <p className="text-maroon-700 mt-2 text-sm">{review.comment}</p>
+            <p className="text-muted-foreground mt-2.5 text-sm leading-relaxed">{review.comment}</p>
           </li>
         ))}
       </ul>

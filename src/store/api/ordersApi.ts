@@ -27,7 +27,10 @@ export interface UpdateOrderStatusRequest {
 
 export const ordersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    createOrder: builder.mutation<Order, { shippingAddress: Address }>({
+    createOrder: builder.mutation<
+      Order,
+      { shippingAddress: Address; paymentMethod?: "razorpay" | "cod" }
+    >({
       query: (body) => ({ url: "/orders", method: "POST", body }),
       transformResponse: (response: ApiSuccess<{ order: Order }>) => response.data.order,
       invalidatesTags: ["Cart", { type: "Order", id: "LIST" }],

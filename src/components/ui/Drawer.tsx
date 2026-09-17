@@ -16,9 +16,6 @@ export interface DrawerProps {
   className?: string;
 }
 
-// Slide-in panel for mobile nav (Section 5), cart (Section 8), and filters (Section 6) — a
-// bottom-sheet-on-mobile / drawer-on-desktop pattern shows up repeatedly in the checklist, so
-// this is the one shared primitive for all of them rather than three bespoke implementations.
 export function Drawer({ open, onClose, title, children, side = "right", className }: DrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   useFocusTrap(panelRef, open, onClose);
@@ -37,7 +34,11 @@ export function Drawer({ open, onClose, title, children, side = "right", classNa
 
   return createPortal(
     <div className={cn("fixed inset-0 z-50 flex", side === "bottom" && "items-end")}>
-      <div className="bg-maroon-900/50 absolute inset-0" onClick={onClose} aria-hidden="true" />
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div
         ref={panelRef}
         role="dialog"
@@ -45,22 +46,24 @@ export function Drawer({ open, onClose, title, children, side = "right", classNa
         aria-labelledby="drawer-title"
         tabIndex={-1}
         className={cn(
-          "relative z-10 flex flex-col bg-white shadow-lg",
-          side === "bottom" ? "max-h-[85vh] w-full rounded-t-xl" : "h-full w-full max-w-sm",
-          side === "right" && "ml-auto",
-          side === "left" && "mr-auto",
+          "bg-card text-card-foreground shadow-elegant relative z-10 flex flex-col transition-all",
+          side === "bottom"
+            ? "border-border max-h-[85vh] w-full rounded-t-2xl border-t"
+            : "h-full w-full max-w-sm",
+          side === "right" && "border-border ml-auto border-l",
+          side === "left" && "border-border mr-auto border-r",
           className,
         )}
       >
-        <div className="border-maroon-50 flex items-center justify-between border-b p-4">
-          <h2 id="drawer-title" className="font-heading text-maroon-900 text-lg">
+        <div className="border-border flex items-center justify-between border-b p-4">
+          <h2 id="drawer-title" className="font-heading text-foreground text-lg font-semibold">
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-maroon-700 hover:bg-maroon-50 focus-visible:outline-maroon-600 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:outline-ring flex h-10 w-10 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>

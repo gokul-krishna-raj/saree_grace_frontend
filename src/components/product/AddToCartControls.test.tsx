@@ -10,6 +10,9 @@ const addCartItemMock = jest.fn();
 jest.mock("@/store/api/cartApi", () => ({
   useAddCartItemMutation: () => [addCartItemMock, { isLoading: false }],
 }));
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
 
 import { AddToCartControls } from "./AddToCartControls";
 

@@ -185,7 +185,7 @@ export interface OrderItem {
 }
 
 export interface OrderPayment {
-  provider: "razorpay";
+  provider: "razorpay" | "cod";
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   razorpaySignature?: string;

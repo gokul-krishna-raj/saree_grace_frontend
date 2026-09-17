@@ -1,51 +1,62 @@
+import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { cn } from "@/lib/cn";
 import type { Category } from "@/types";
 
-const SIZE_CLASSES = {
-  sm: "h-24 w-24 sm:h-28 sm:w-28",
-  md: "h-28 w-28 sm:h-32 sm:w-32",
-  lg: "h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36",
-  xl: "h-32 w-32 sm:h-36 sm:w-36 lg:h-40 lg:w-40",
-} as const;
-
 interface CategoryCardProps {
   category: Category;
-  size?: keyof typeof SIZE_CLASSES;
+  size?: "sm" | "md" | "lg" | "xl";
   className?: string;
 }
 
-export function CategoryCard({ category, size = "md", className }: CategoryCardProps) {
+export function CategoryCard({ category, className }: CategoryCardProps) {
+  const imageUrl =
+    category.image?.url ||
+    `/images/categories/${category.slug}.webp` ||
+    "/images/categories/bridal-sarees.webp";
+
   return (
     <Link
       href={`/categories/${category.slug}`}
-      className={cn("group flex flex-col items-center gap-2.5 text-center", className)}
+      className={cn(
+        "group hover:shadow-elegant relative block aspect-[3/4] overflow-hidden rounded-2xl shadow-sm transition-all duration-500 lg:aspect-square",
+        className,
+      )}
     >
-      <span
-        className={cn(
-          "border-maroon-100 bg-maroon-50 group-hover:border-maroon-600 relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 shadow-xs transition-all duration-200 group-hover:scale-105 group-hover:shadow-md",
-          SIZE_CLASSES[size],
-        )}
-      >
-        {category.image?.url ? (
-          <Image
-            src={category.image.url}
-            alt={category.name}
-            fill
-            sizes="(min-width: 640px) 144px, 112px"
-            className="object-cover transition-transform duration-300 group-hover:scale-110"
-          />
-        ) : (
-          <span className="text-maroon-700 font-heading text-xl sm:text-2xl" aria-hidden="true">
-            {category.name.charAt(0).toUpperCase()}
+      {/* Background Image */}
+      <Image
+        src={imageUrl}
+        alt={category.name}
+        fill
+        sizes="(min-width: 1024px) 33vw, 50vw"
+        className="object-cover transition-transform duration-700 group-hover:scale-110"
+      />
+
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+
+      {/* Content */}
+      <div className="absolute inset-0 flex flex-col justify-end p-4 lg:p-6">
+        <h3 className="font-display text-lg font-semibold text-white drop-shadow-xs lg:text-xl">
+          {category.name}
+        </h3>
+        {category.description ? (
+          <p className="mb-2 line-clamp-2 hidden text-xs leading-relaxed text-white/75 lg:block">
+            {category.description}
+          </p>
+        ) : null}
+        <div className="mt-1 flex items-center justify-between">
+          <span className="text-xs font-medium text-white/80 sm:text-sm">Explore Collection</span>
+          <span className="flex h-8 w-8 translate-x-4 items-center justify-center rounded-full bg-white/20 opacity-0 backdrop-blur-xs transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
+            <ArrowRight className="h-4 w-4 text-white" aria-hidden="true" />
           </span>
-        )}
-      </span>
-      <span className="text-maroon-900 group-hover:text-maroon-700 line-clamp-2 max-w-[6.5rem] text-xs font-medium transition-colors sm:max-w-[8rem] sm:text-sm">
-        {category.name}
-      </span>
+        </div>
+      </div>
+
+      {/* Decorative gold border on hover */}
+      <div className="border-gold/0 group-hover:border-gold/60 pointer-events-none absolute inset-2 rounded-xl border-2 transition-colors duration-500" />
     </Link>
   );
 }

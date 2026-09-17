@@ -89,9 +89,29 @@ export function useRazorpayCheckout() {
       try {
         const paymentOrder = await createRazorpayOrder({ orderId: order._id }).unwrap();
 
+        // Handle development mock order
+        if (paymentOrder.razorpayOrderId.startsWith("order_mock_")) {
+          toast.info("Simulating payment in development mock mode...");
+          try {
+            await verifyPayment({
+              razorpayOrderId: paymentOrder.razorpayOrderId,
+              razorpayPaymentId: `pay_mock_${Date.now()}`,
+              razorpaySignature: "mock_signature",
+            }).unwrap();
+            router.push(`/checkout/success/${order._id}`);
+          } catch (err) {
+            toast.error(toErrorMessage(err, "We couldn't confirm your test payment."));
+            router.push(`/checkout/failed/${order._id}`);
+          } finally {
+            setIsProcessing(false);
+          }
+          return;
+        }
+
         if (typeof window === "undefined" || !window.Razorpay) {
           toast.error("Payment couldn't load. Please refresh and try again.");
           setIsProcessing(false);
+          router.push(`/checkout/failed/${order._id}`);
           return;
         }
 
@@ -159,8 +179,9 @@ export function useRazorpayCheckout() {
         });
         razorpay.open();
       } catch (error) {
-        toast.error(toErrorMessage(error, "Couldn't start payment. Please try again."));
         setIsProcessing(false);
+        toast.error(toErrorMessage(error, "Payment initialization failed."));
+        router.push(`/checkout/failed/${order._id}`);
       }
     },
     [createRazorpayOrder, verifyPayment, router],

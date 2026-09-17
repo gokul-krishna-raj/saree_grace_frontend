@@ -16,12 +16,9 @@ export function CategoryGrid({ initialCategories }: CategoryGridProps = {}) {
 
   if (isLoading && (!initialCategories || initialCategories.length === 0)) {
     return (
-      <div className="grid grid-cols-3 gap-x-4 gap-y-8 px-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-        {Array.from({ length: 12 }).map((_, index) => (
-          <div key={index} className="flex flex-col items-center gap-2">
-            <Skeleton className="h-28 w-28 rounded-full" />
-            <Skeleton className="h-3 w-16" />
-          </div>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-6">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <Skeleton key={index} className="aspect-[3/4] rounded-2xl lg:aspect-square" />
         ))}
       </div>
     );
@@ -33,16 +30,16 @@ export function CategoryGrid({ initialCategories }: CategoryGridProps = {}) {
 
   if (!displayCategories?.length) {
     return (
-      <p className="text-maroon-600 px-4 py-12 text-center text-sm">
+      <p className="text-muted-foreground px-4 py-16 text-center text-sm">
         Categories are being set up — check back soon.
       </p>
     );
   }
 
   return (
-    <div className="grid grid-cols-3 gap-x-4 gap-y-8 px-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-6">
       {displayCategories.map((category) => (
-        <CategoryCard key={category._id} category={category} size="lg" />
+        <CategoryCard key={category._id} category={category} />
       ))}
     </div>
   );

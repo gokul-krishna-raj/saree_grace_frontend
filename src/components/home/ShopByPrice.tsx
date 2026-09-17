@@ -25,14 +25,14 @@ function buildHref({ minPrice, maxPrice }: PriceRange): string {
 
 export function ShopByPrice() {
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="font-heading text-maroon-900 px-4 text-2xl">Shop by Price</h2>
-      <div className="scrollbar-hide flex gap-4 overflow-x-auto px-4 pb-1">
+    <section className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-10">
+      <h2 className="font-display text-foreground text-2xl font-bold sm:text-3xl">Shop by Price</h2>
+      <div className="scrollbar-hide flex gap-4 overflow-x-auto pb-1">
         {PRICE_RANGES.map((range) => (
           <Link
             key={range.label}
             href={buildHref(range)}
-            className="border-maroon-100 bg-maroon-50 hover:border-maroon-400 text-maroon-800 flex w-36 shrink-0 items-center justify-center rounded-lg border-2 px-4 py-6 text-center text-sm font-medium transition-colors"
+            className="border-border hover:border-primary hover:text-primary bg-card text-foreground flex w-36 shrink-0 items-center justify-center rounded-xl border px-4 py-6 text-center text-sm font-medium shadow-xs transition-all hover:shadow-md"
           >
             {range.label}
           </Link>

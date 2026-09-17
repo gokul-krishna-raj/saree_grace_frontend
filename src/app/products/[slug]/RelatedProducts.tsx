@@ -20,11 +20,20 @@ export function RelatedProducts({
 
   if (isLoading && (!initialProducts || initialProducts.length === 0)) {
     return (
-      <section className="px-3 py-8 sm:px-4">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="aspect-[3/4] w-full" />
-          ))}
+      <section className="bg-cream/40 border-border/40 border-t py-12 lg:py-20">
+        <div className="mx-auto max-w-6xl px-4">
+          <h2 className="font-display text-foreground mb-8 text-2xl font-bold lg:text-3xl">
+            You May Also Like
+          </h2>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="space-y-3">
+                <Skeleton className="aspect-[3/4] w-full rounded-xl" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-5 w-1/2" />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     );
@@ -33,12 +42,16 @@ export function RelatedProducts({
   if (related.length === 0) return null;
 
   return (
-    <section className="px-3 py-8 sm:px-4">
-      <h2 className="font-heading text-maroon-900 mb-4 text-xl">You may also like</h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        {related.map((product) => (
-          <ProductCard key={product._id} product={product} />
-        ))}
+    <section className="bg-cream/40 border-border/40 border-t py-12 lg:py-20">
+      <div className="mx-auto max-w-6xl px-4">
+        <h2 className="font-display text-foreground mb-8 text-2xl font-bold lg:text-3xl">
+          You May Also Like
+        </h2>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+          {related.map((product) => (
+            <ProductCard key={product._id} product={product} />
+          ))}
+        </div>
       </div>
     </section>
   );

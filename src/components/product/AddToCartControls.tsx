@@ -3,6 +3,7 @@
 import type { SerializedError } from "@reduxjs/toolkit";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import { Minus, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -26,11 +27,13 @@ export function AddToCartControls({
   variant?: ProductVariant;
   requiresVariantSelection?: boolean;
 }) {
+  const router = useRouter();
   const dispatch = useAppDispatch();
   const authStatus = useAppSelector((state) => state.auth.status);
   const isAuthenticated = authStatus === "authenticated";
   const isAuthPending = authStatus === "checking";
   const [addCartItem, { isLoading }] = useAddCartItemMutation();
+  const [isBuyNowLoading, setIsBuyNowLoading] = useState(false);
   const [qty, setQty] = useState(1);
 
   const price = product.type === "variant" ? variant?.price : product.price;
@@ -72,19 +75,59 @@ export function AddToCartControls({
     }
   }
 
+  async function handleBuyNow() {
+    if (product.type === "variant" && !variant) return;
+    if (isAuthPending) return;
+
+    setIsBuyNowLoading(true);
+    const primaryImg = variant?.images?.[0] ?? getProductPrimaryImage(product);
+
+    try {
+      if (!isAuthenticated) {
+        dispatch(
+          guestItemAdded({
+            productId: product._id,
+            variantId: variant?._id ?? null,
+            qty,
+            nameSnapshot: product.name,
+            imageSnapshot: primaryImg?.url,
+            priceSnapshot: price ?? 0,
+          }),
+        );
+      } else {
+        await addCartItem({
+          productId: product._id,
+          variantId: variant?._id ?? null,
+          qty,
+        }).unwrap();
+      }
+      trackAddToCart(product, variant, qty);
+      router.push("/checkout");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error as FetchBaseQueryError | SerializedError));
+    } finally {
+      setIsBuyNowLoading(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
+      {/* Quantity Stepper */}
       <div className="flex items-center gap-3">
-        <div className="border-maroon-200 flex h-11 items-center rounded-lg border">
+        <span className="text-foreground text-sm font-semibold">Quantity:</span>
+        <div className="border-border bg-card flex h-11 items-center rounded-xl border">
           <button
             type="button"
             onClick={() => setQty((current) => Math.max(1, current - 1))}
             aria-label="Decrease quantity"
-            className="text-maroon-700 flex h-11 w-11 items-center justify-center"
+            className="text-foreground hover:bg-muted flex h-11 w-11 items-center justify-center transition-colors"
           >
             <Minus className="h-4 w-4" aria-hidden="true" />
           </button>
-          <span className="w-8 text-center text-base" aria-live="polite">
+          <span
+            className="text-foreground w-9 text-center text-sm font-semibold"
+            aria-live="polite"
+          >
             {qty}
           </span>
           <button
@@ -92,22 +135,44 @@ export function AddToCartControls({
             onClick={() => setQty((current) => Math.min(stock || 1, current + 1))}
             aria-label="Increase quantity"
             disabled={qty >= stock}
-            className="text-maroon-700 flex h-11 w-11 items-center justify-center disabled:opacity-40"
+            className="text-foreground hover:bg-muted flex h-11 w-11 items-center justify-center transition-colors disabled:opacity-40"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
+      </div>
+
+      {/* Dual Purchase Actions */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         <Button
-          className="flex-1"
+          variant="gold"
+          size="lg"
+          className="flex-1 font-semibold"
           onClick={handleAddToCart}
           disabled={disabled}
           isLoading={isLoading || isAuthPending}
         >
           {needsSelection ? "Select an option" : outOfStock ? "Out of stock" : "Add to cart"}
         </Button>
+        <Button
+          variant="default"
+          size="lg"
+          className="flex-1 font-semibold"
+          onClick={handleBuyNow}
+          disabled={disabled}
+          isLoading={isBuyNowLoading}
+        >
+          Buy Now
+        </Button>
       </div>
+
+      {needsSelection ? (
+        <p className="text-destructive text-center text-sm sm:text-left">
+          * Please select an option to proceed
+        </p>
+      ) : null}
+
       {!needsSelection && !outOfStock && stock <= 5 ? (
-        // Badge, not plain text-gold-600 on white — measured 3.99:1 (needs 4.5:1 for text).
         <Badge variant="gold" className="w-fit">
           Only {stock} left in stock
         </Badge>

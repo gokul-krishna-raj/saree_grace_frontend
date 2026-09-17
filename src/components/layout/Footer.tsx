@@ -15,7 +15,8 @@ import type { Category } from "@/types";
 
 const PAYMENT_METHODS = ["UPI", "Visa", "Mastercard", "RuPay", "Net Banking"];
 
-const linkClass = "text-maroon-700 hover:text-maroon-900 text-sm transition-colors";
+const linkClass =
+  "text-primary-foreground/75 hover:text-primary-foreground hover:underline text-sm transition-colors";
 
 // The WhatsApp number is stored as `<countrycode><10 digits>` (e.g. "919500750704") — this is
 // purely a display formatter, the raw value is what's used in tel:/wa.me hrefs.
@@ -30,8 +31,13 @@ function formatPhoneForDisplay(raw: string) {
 
 export async function Footer() {
   const whatsappNumber = env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-  const categoriesData = await serverFetch<{ categories: Category[] }>("/categories");
-  const initialCategories = categoriesData?.categories ?? [];
+  let initialCategories: Category[] = [];
+  try {
+    const categoriesData = await serverFetch<{ categories: Category[] }>("/categories");
+    initialCategories = categoriesData?.categories ?? [];
+  } catch {
+    // Non-blocking fallback if backend is offline during build
+  }
 
   const socialLinks = [
     { href: env.NEXT_PUBLIC_INSTAGRAM_URL, label: "Instagram", Icon: InstagramIcon },
@@ -45,11 +51,13 @@ export async function Footer() {
   );
 
   return (
-    <footer className="border-maroon-50 border-t bg-white">
-      <div className="mx-auto grid max-w-6xl gap-x-8 px-4 py-10 sm:grid-cols-2 sm:gap-y-10 lg:grid-cols-5">
-        <div className="border-maroon-50 border-b pb-4 sm:col-span-2 sm:border-none sm:pb-0 lg:col-span-1">
-          <p className="font-heading text-maroon-900 text-lg">Saree Grace</p>
-          <p className="text-maroon-600 mt-2 text-sm leading-relaxed">
+    <footer className="border-primary-foreground/15 bg-primary text-primary-foreground border-t pb-20 lg:pb-0">
+      <div className="mx-auto grid max-w-6xl gap-x-8 px-4 py-12 sm:grid-cols-2 sm:gap-y-10 lg:grid-cols-5">
+        <div className="border-primary-foreground/15 border-b pb-4 sm:col-span-2 sm:border-none sm:pb-0 lg:col-span-1">
+          <p className="font-display text-primary-foreground text-2xl font-bold tracking-tight">
+            Saree Grace
+          </p>
+          <p className="text-primary-foreground/80 mt-3 text-sm leading-relaxed">
             Saree Grace brings authentic Elampillai sarees straight from weaver families in Salem,
             Tamil Nadu, to your doorstep. From everyday cotton weaves to festive silk, we keep
             online saree shopping simple, honest, and rooted in real craftsmanship.
@@ -107,31 +115,31 @@ export async function Footer() {
           </Link>
         </FooterAccordionSection>
 
-        <div className="border-maroon-50 flex flex-col gap-3 border-t pt-4 sm:col-span-2 sm:border-none sm:pt-0 lg:col-span-1">
-          <p className="text-maroon-900 text-sm font-medium">Get in Touch</p>
-          <p className="text-maroon-700 flex items-start gap-2 text-sm">
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+        <div className="border-primary-foreground/15 flex flex-col gap-3 border-t pt-4 sm:col-span-2 sm:border-none sm:pt-0 lg:col-span-1">
+          <p className="text-primary-foreground text-sm font-semibold">Get in Touch</p>
+          <p className="text-primary-foreground/80 flex items-start gap-2 text-sm">
+            <MapPin className="text-accent mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>Saree Grace, Elampillai, Salem, Tamil Nadu</span>
           </p>
           {whatsappNumber ? (
             <a
               href={`tel:+${whatsappNumber}`}
-              className="text-maroon-700 hover:text-maroon-900 flex items-center gap-2 text-sm transition-colors"
+              className="text-primary-foreground/80 hover:text-primary-foreground flex items-center gap-2 text-sm transition-colors"
             >
-              <Phone className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <Phone className="text-accent h-4 w-4 shrink-0" aria-hidden="true" />
               {formatPhoneForDisplay(whatsappNumber)}
             </a>
           ) : null}
           <a
             href={`mailto:${env.NEXT_PUBLIC_CONTACT_EMAIL}`}
-            className="text-maroon-700 hover:text-maroon-900 flex items-center gap-2 text-sm transition-colors"
+            className="text-primary-foreground/80 hover:text-primary-foreground flex items-center gap-2 text-sm transition-colors"
           >
-            <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <Mail className="text-accent h-4 w-4 shrink-0" aria-hidden="true" />
             {env.NEXT_PUBLIC_CONTACT_EMAIL}
           </a>
 
           {socialLinks.length > 0 ? (
-            <div className="mt-1 flex items-center gap-3">
+            <div className="mt-2 flex items-center gap-3">
               {socialLinks.map(({ href, label, Icon }) => (
                 <a
                   key={label}
@@ -139,7 +147,7 @@ export async function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="text-maroon-700 hover:text-maroon-900 transition-colors"
+                  className="hover:text-accent text-primary-foreground/80 transition-colors"
                 >
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </a>
@@ -149,41 +157,47 @@ export async function Footer() {
         </div>
       </div>
 
-      <div className="border-maroon-50 border-t">
+      <div className="border-primary-foreground/15 border-t">
         <div className="mx-auto flex max-w-6xl flex-col items-start gap-3 px-4 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-maroon-900 flex items-center gap-2 text-sm font-medium">
-            <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+          <div className="text-primary-foreground flex items-center gap-2 text-sm font-medium">
+            <ShieldCheck className="text-accent h-4 w-4" aria-hidden="true" />
             We Accept
           </div>
           <div className="flex flex-wrap gap-2">
             {PAYMENT_METHODS.map((method) => (
               <span
                 key={method}
-                className="border-maroon-100 text-maroon-700 rounded-md border px-2.5 py-1 text-xs font-medium"
+                className="border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/90 rounded-md border px-2.5 py-1 text-xs font-medium"
               >
                 {method}
               </span>
             ))}
           </div>
-          <p className="text-maroon-400 text-xs">Secure checkout powered by Razorpay</p>
+          <p className="text-primary-foreground/60 text-xs">Secure checkout powered by Razorpay</p>
         </div>
       </div>
 
-      <div className="border-maroon-50 border-t">
+      <div className="border-primary-foreground/15 border-t">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-4 text-center sm:flex-row sm:justify-between sm:text-left">
-          <p className="text-maroon-400 text-xs">
+          <p className="text-primary-foreground/60 text-xs">
             © {new Date().getFullYear()} Saree Grace. All rights reserved.
           </p>
           <nav aria-label="Legal" className="flex gap-4 text-xs">
-            <Link href="/privacy-policy" className="text-maroon-500 hover:text-maroon-700">
+            <Link
+              href="/privacy-policy"
+              className="text-primary-foreground/70 hover:text-primary-foreground"
+            >
               Privacy Policy
             </Link>
-            <Link href="/terms-and-conditions" className="text-maroon-500 hover:text-maroon-700">
+            <Link
+              href="/terms-and-conditions"
+              className="text-primary-foreground/70 hover:text-primary-foreground"
+            >
               Terms &amp; Conditions
             </Link>
           </nav>
         </div>
-        <p className="text-maroon-400 pb-4 text-center text-xs">
+        <p className="text-primary-foreground/50 pb-4 text-center text-xs">
           Online saree shopping from Elampillai, Salem, Tamil Nadu.
         </p>
       </div>

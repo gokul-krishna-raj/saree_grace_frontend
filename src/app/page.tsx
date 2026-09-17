@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { BestSellersCarousel } from "@/components/home/BestSellersCarousel";
 import { BrandStory } from "@/components/home/BrandStory";
@@ -51,25 +50,10 @@ export default async function HomePage() {
   const initialProducts = featuredData?.products ?? [];
 
   return (
-    <main className="flex flex-1 flex-col gap-12 pb-12">
+    <main className="flex flex-1 flex-col pb-12">
       <Hero />
-      <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between px-4">
-          <h2 className="font-heading text-maroon-900 text-2xl">Shop by category</h2>
-          <Link
-            href="/categories"
-            className="text-maroon-700 hover:text-maroon-900 text-sm font-medium"
-          >
-            View All
-          </Link>
-        </div>
-        <CategoryShowcase initialCategories={initialCategories} />
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <h2 className="font-heading text-maroon-900 px-4 text-2xl">New arrivals</h2>
-        <FeaturedCarousel initialProducts={initialProducts} />
-      </section>
+      <CategoryShowcase initialCategories={initialCategories} />
+      <FeaturedCarousel initialProducts={initialProducts} />
       <ShopByPrice />
       <WhyShopWithUs />
       <BestSellersCarousel />
