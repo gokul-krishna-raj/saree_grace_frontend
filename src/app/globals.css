@@ -1,7 +1,19 @@
 @import "tailwindcss";
 
+/*
+ * Saree Grace design tokens — one system.
+ *
+ * Semantic tokens (`bg-primary`, `text-muted-foreground`, …) are HSL triplets on :root so they can
+ * take an alpha (`bg-primary/10`). The `maroon-*` / `gold-*` scales are the same palette as hex
+ * steps for the places that need a specific shade. Every step 50–950 is defined — the old scale
+ * skipped 300/500/800/950, which silently rendered ~40 classes with no colour at all.
+ *
+ * Contrast (measured, WCAG AA 4.5:1 for body text) on the ivory background:
+ *   foreground 16.3 · primary 10.7 · muted-foreground 6.1 · accent (gold-700) 6.4 · sale 7.1
+ * gold-400/500 are decorative only (≈3.3:1) — never body text on light surfaces.
+ */
 @theme {
-  /* Core Semantic Tokens */
+  /* Core semantic tokens */
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
@@ -29,7 +41,10 @@
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
 
-  /* Brand Colors */
+  --color-sale: hsl(var(--sale));
+  --color-success: hsl(var(--success));
+
+  /* Brand colours */
   --color-maroon: hsl(var(--maroon));
   --color-maroon-light: hsl(var(--maroon-light));
   --color-maroon-dark: hsl(var(--maroon-dark));
@@ -47,7 +62,7 @@
   --color-silk: hsl(var(--silk-pink));
   --color-forest: hsl(var(--forest-green));
 
-  /* Sidebar Tokens */
+  /* Sidebar tokens (admin) */
   --color-sidebar: hsl(var(--sidebar-background));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-primary: hsl(var(--sidebar-primary));
@@ -57,118 +72,114 @@
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  /* Backward Compatibility Shades */
-  --color-maroon-50: #fbeaec;
-  --color-maroon-100: #f0c4ca;
-  --color-maroon-200: #e19aa5;
-  --color-maroon-400: #b24a5c;
-  --color-maroon-600: #7a2635;
-  --color-maroon-700: #5e1d29;
-  --color-maroon-900: #3a1218;
+  /* Full maroon / gold scales */
+  --color-maroon-50: #fbf3f4;
+  --color-maroon-100: #f5e1e4;
+  --color-maroon-200: #e9c0c7;
+  --color-maroon-300: #d6949f;
+  --color-maroon-400: #b85c6d;
+  --color-maroon-500: #973b4f;
+  --color-maroon-600: #7e2b3f;
+  --color-maroon-700: #6a1f33;
+  --color-maroon-800: #54192a;
+  --color-maroon-900: #3d1320;
+  --color-maroon-950: #260b14;
 
-  --color-gold-50: #fdf8ec;
-  --color-gold-100: #f8e8be;
-  --color-gold-400: #d9a94a;
-  --color-gold-500: #c4922e;
-  --color-gold-600: #a5771f;
+  --color-gold-50: #fbf6ec;
+  --color-gold-100: #f4e7c9;
+  --color-gold-200: #e9d19c;
+  --color-gold-300: #ddb872;
+  --color-gold-400: #c99a4b;
+  --color-gold-500: #b0803a;
+  --color-gold-600: #8e652b;
+  --color-gold-700: #7a5423;
 
   /* Typography */
   --font-display: var(--font-playfair), "Playfair Display", Georgia, serif;
   --font-heading: var(--font-playfair), "Playfair Display", Georgia, serif;
   --font-body: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Border Radii */
+  /* Radii — deliberately tight; fashion UI reads more premium with restrained rounding */
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  /* Shadows */
-  --shadow-soft: 0 4px 20px -4px hsl(0 0% 0% / 0.1);
-  --shadow-elegant: 0 10px 40px -10px hsl(345 65% 30% / 0.2);
-  --shadow-gold: 0 8px 30px -8px hsl(38 70% 50% / 0.3);
+  /* Shadows — soft and rare. Cards sit on borders/whitespace, not drop shadows. */
+  --shadow-soft: 0 1px 2px hsl(350 40% 10% / 0.05), 0 8px 24px -12px hsl(350 40% 10% / 0.12);
+  --shadow-elegant: 0 1px 2px hsl(350 40% 10% / 0.06), 0 18px 40px -20px hsl(350 40% 10% / 0.25);
+  --shadow-gold: 0 8px 24px -14px hsl(35 54% 36% / 0.35);
 
-  /* Animations */
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
-  --animate-fade-in: fade-in 0.5s ease-out;
-  --animate-fade-in-up: fade-in-up 0.6s ease-out;
-  --animate-slide-in-right: slide-in-right 0.5s ease-out;
-  --animate-scale-in: scale-in 0.3s ease-out;
+  --animate-fade-in: fade-in 0.35s var(--ease-out-soft);
+  --animate-fade-in-up: fade-in-up 0.5s var(--ease-out-soft);
+  --animate-slide-in-right: slide-in-right 0.3s var(--ease-out-soft);
+  --animate-slide-in-left: slide-in-left 0.3s var(--ease-out-soft);
+  --animate-slide-in-up: slide-in-up 0.3s var(--ease-out-soft);
+  --animate-scale-in: scale-in 0.2s var(--ease-out-soft);
+  --animate-overlay-in: overlay-in 0.2s ease-out;
   --animate-float: float 3s ease-in-out infinite;
-  --animate-shimmer: shimmer 2s infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
   --animate-pulse-gold: pulse-gold 2s infinite;
+  --animate-pop: pop 0.35s var(--ease-out-soft);
 }
 
 :root {
-  /* Premium Indian Fashion Color Palette */
-  --background: 30 25% 97%;
-  --foreground: 0 20% 15%;
+  --background: 38 50% 97%;
+  --foreground: 350 37% 12%;
 
-  --card: 30 30% 99%;
-  --card-foreground: 0 20% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 350 37% 12%;
 
-  --popover: 30 30% 99%;
-  --popover-foreground: 0 20% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 350 37% 12%;
 
-  /* Maroon - Primary brand color */
-  --primary: 345 65% 30%;
-  --primary-foreground: 30 30% 98%;
+  /* Maroon — primary brand colour (#6A1F33) */
+  --primary: 344 55% 27%;
+  --primary-foreground: 38 50% 98%;
 
-  /* Cream/Beige - Secondary */
-  --secondary: 35 40% 92%;
-  --secondary-foreground: 0 20% 15%;
+  --secondary: 36 42% 91%;
+  --secondary-foreground: 350 37% 12%;
 
-  /* Gold accents */
-  --accent: 38 70% 50%;
-  --accent-foreground: 0 20% 10%;
+  /* Antique gold — text-safe shade (#7A5423) */
+  --accent: 33 55% 31%;
+  --accent-foreground: 38 50% 98%;
 
-  --muted: 30 20% 90%;
-  --muted-foreground: 0 10% 45%;
+  --muted: 36 33% 93%;
+  --muted-foreground: 353 9% 39%;
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 56% 39%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 30 25% 85%;
-  --input: 30 25% 85%;
-  --ring: 345 65% 30%;
+  --sale: 0 56% 39%;
+  --success: 142 39% 30%;
 
-  --radius: 0.75rem;
+  --border: 34 32% 86%;
+  --input: 34 25% 80%;
+  --ring: 344 55% 27%;
 
-  /* Custom brand colors */
-  --maroon: 345 65% 30%;
-  --maroon-light: 345 55% 45%;
-  --maroon-dark: 345 70% 20%;
+  --radius: 0.5rem;
 
-  --royal-blue: 220 70% 35%;
-  --royal-blue-light: 220 60% 50%;
+  --maroon: 344 55% 27%;
+  --maroon-light: 344 45% 38%;
+  --maroon-dark: 345 52% 16%;
 
-  --gold: 38 70% 50%;
-  --gold-light: 42 80% 65%;
-  --gold-dark: 35 65% 40%;
+  --royal-blue: 220 55% 32%;
+  --royal-blue-light: 220 50% 45%;
 
-  --cream: 35 40% 95%;
-  --cream-dark: 30 30% 88%;
+  --gold: 35 50% 45%;
+  --gold-light: 40 62% 72%;
+  --gold-dark: 33 55% 31%;
 
-  --silk-pink: 350 50% 85%;
-  --forest-green: 150 40% 30%;
+  --cream: 37 45% 93%;
+  --cream-dark: 34 32% 86%;
 
-  /* Gradients */
-  --gradient-gold: linear-gradient(
-    135deg,
-    hsl(38 70% 50%) 0%,
-    hsl(42 80% 65%) 50%,
-    hsl(35 65% 40%) 100%
-  );
-  --gradient-maroon: linear-gradient(135deg, hsl(345 65% 35%) 0%, hsl(345 70% 25%) 100%);
-  --gradient-premium: linear-gradient(135deg, hsl(345 65% 30%) 0%, hsl(220 70% 35%) 100%);
-  --gradient-cream: linear-gradient(180deg, hsl(35 40% 95%) 0%, hsl(30 30% 88%) 100%);
+  --silk-pink: 350 50% 88%;
+  --forest-green: 150 35% 28%;
 
-  /* Shadows */
-  --shadow-soft: 0 4px 20px -4px hsl(0 0% 0% / 0.1);
-  --shadow-elegant: 0 10px 40px -10px hsl(345 65% 30% / 0.2);
-  --shadow-gold: 0 8px 30px -8px hsl(38 70% 50% / 0.3);
-
-  /* Sidebar Tokens */
   --sidebar-background: 0 0% 98%;
   --sidebar-foreground: 240 5.3% 26.1%;
   --sidebar-primary: 240 5.9% 10%;
@@ -177,59 +188,15 @@
   --sidebar-accent-foreground: 240 5.9% 10%;
   --sidebar-border: 220 13% 91%;
   --sidebar-ring: 217.2 91.2% 59.8%;
+
+  /* Height of the sticky header row, used for scroll-padding and sticky offsets */
+  --header-height: 3.5rem;
 }
 
-.dark {
-  --background: 0 20% 8%;
-  --foreground: 30 25% 95%;
-
-  --card: 0 18% 12%;
-  --card-foreground: 30 25% 95%;
-
-  --popover: 0 18% 12%;
-  --popover-foreground: 30 25% 95%;
-
-  --primary: 345 55% 55%;
-  --primary-foreground: 0 20% 8%;
-
-  --secondary: 0 15% 18%;
-  --secondary-foreground: 30 25% 95%;
-
-  --accent: 38 65% 55%;
-  --accent-foreground: 0 20% 8%;
-
-  --muted: 0 15% 20%;
-  --muted-foreground: 30 15% 65%;
-
-  --destructive: 0 62% 30%;
-  --destructive-foreground: 0 0% 98%;
-
-  --border: 0 15% 22%;
-  --input: 0 15% 22%;
-  --ring: 345 55% 55%;
-
-  --maroon: 345 55% 55%;
-  --maroon-light: 345 50% 65%;
-  --maroon-dark: 345 60% 40%;
-
-  --royal-blue: 220 60% 55%;
-  --royal-blue-light: 220 55% 65%;
-
-  --gold: 38 65% 55%;
-  --gold-light: 42 70% 65%;
-  --gold-dark: 35 60% 45%;
-
-  --cream: 30 15% 18%;
-  --cream-dark: 30 12% 15%;
-
-  --sidebar-background: 240 5.9% 10%;
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 224.3 76.3% 48%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
+@media (min-width: 1024px) {
+  :root {
+    --header-height: 4.5rem;
+  }
 }
 
 /* Keyframes */
@@ -252,44 +219,67 @@
 }
 
 @keyframes fade-in {
-  0% {
+  from {
     opacity: 0;
-    transform: translateY(10px);
   }
-  100% {
+  to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 @keyframes fade-in-up {
-  0% {
+  from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
-  100% {
+  to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
 @keyframes slide-in-right {
-  0% {
-    opacity: 0;
-    transform: translateX(20px);
+  from {
+    transform: translateX(100%);
   }
-  100% {
-    opacity: 1;
+  to {
     transform: translateX(0);
   }
 }
 
-@keyframes scale-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.95);
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
   }
-  100% {
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
     opacity: 1;
     transform: scale(1);
   }
@@ -301,15 +291,15 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-6px);
   }
 }
 
 @keyframes shimmer {
-  0% {
+  from {
     background-position: 200% 0;
   }
-  100% {
+  to {
     background-position: -200% 0;
   }
 }
@@ -324,54 +314,151 @@
   }
 }
 
-/* Base Global Elements */
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Base element styles — in the base layer so utility classes (e.g. "font-body" on a heading)
+   can override them. Unlayered rules would beat every Tailwind utility. */
+@layer base {
+  html {
+    scroll-padding-top: var(--header-height);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-body);
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.15);
+  }
+
+  :focus-visible {
+    outline-color: hsl(var(--ring));
+  }
+}
+
+/* Respect reduced motion everywhere — including third-party and inline transitions. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Layout + type utilities — the one place section spacing and heading sizes are defined */
+@utility container-page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 88rem;
+  padding-inline: 1rem;
+
+  @media (min-width: 640px) {
+    padding-inline: 1.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    padding-inline: 2.5rem;
+  }
+}
+
+@utility section-y {
+  padding-block: 3.5rem;
+
+  @media (min-width: 1024px) {
+    padding-block: 6rem;
+  }
+}
+
+@utility eyebrow {
   font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: hsl(var(--accent));
+
+  @media (min-width: 640px) {
+    font-size: 0.75rem;
+  }
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+@utility text-display {
   font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(2.375rem, 1.5rem + 3.6vw, 4.75rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
 }
 
-/* Custom Visual Component Utilities */
+@utility text-heading-xl {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.75rem, 1.35rem + 1.6vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+@utility text-heading-lg {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.5rem, 1.25rem + 0.9vw, 2rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+/* Lift the floating WhatsApp button above a page's sticky mobile purchase bar (PDP) */
+@media (max-width: 767px) {
+  body:has([data-sticky-cta]) .whatsapp-fab {
+    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Legacy visual utilities (kept for admin/style-guide compatibility — not used on storefront) */
 .text-gradient-gold {
-  background: linear-gradient(
-    135deg,
-    hsl(var(--gold)) 0%,
-    hsl(var(--gold-light)) 50%,
-    hsl(var(--gold-dark)) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: hsl(var(--gold-dark));
 }
 
 .bg-gradient-gold {
-  background: linear-gradient(
-    135deg,
-    hsl(var(--gold)) 0%,
-    hsl(var(--gold-light)) 50%,
-    hsl(var(--gold-dark)) 100%
-  );
+  background: hsl(var(--gold-light));
 }
 
 .bg-gradient-maroon {
-  background: linear-gradient(135deg, hsl(var(--maroon)) 0%, hsl(var(--maroon-dark)) 100%);
+  background: hsl(var(--primary));
 }
 
 .bg-gradient-premium {
-  background: linear-gradient(135deg, hsl(var(--maroon)) 0%, hsl(var(--royal-blue)) 100%);
-}
-
-.border-gradient-gold {
-  border-image: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(var(--gold-light)) 100%) 1;
+  background: hsl(var(--primary));
 }
 
 .shadow-elegant {
@@ -386,7 +473,7 @@ h6 {
   box-shadow: var(--shadow-soft);
 }
 
-/* Premium underline animation */
+/* Animated underline for text links */
 .link-underline {
   position: relative;
 }
@@ -394,39 +481,38 @@ h6 {
 .link-underline::after {
   content: "";
   position: absolute;
-  bottom: 0;
+  bottom: -2px;
   left: 0;
   width: 100%;
-  height: 2px;
-  background-color: hsl(var(--accent));
+  height: 1px;
+  background-color: currentColor;
   transform: scaleX(0);
   transform-origin: right;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s var(--ease-out-soft);
 }
 
-.link-underline:hover::after {
+.link-underline:hover::after,
+.link-underline[aria-current="page"]::after {
   transform: scaleX(1);
   transform-origin: left;
 }
 
-/* Shimmer effect for premium feel */
 .shimmer {
   background: linear-gradient(
     90deg,
-    hsl(var(--cream)) 0%,
-    hsl(var(--gold-light) / 0.3) 50%,
-    hsl(var(--cream)) 100%
+    hsl(var(--muted)) 0%,
+    hsl(var(--cream)) 50%,
+    hsl(var(--muted)) 100%
   );
   background-size: 200% 100%;
-  animation: shimmer 2s infinite;
+  animation: shimmer 1.6s linear infinite;
 }
 
-/* Indian Jali Pattern Motif */
+/* Subtle woven texture for brand panels */
 .bg-pattern-indian {
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23b8860b' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e9d19c' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* Scrollbar Hiding */
 .scrollbar-hide {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -439,6 +525,31 @@ h6 {
 /* Sanitized HTML product descriptions (ProductDescription.tsx) */
 .description-content p {
   margin-bottom: 1rem;
+}
+
+.description-content h3,
+.description-content h4 {
+  font-family: var(--font-display);
+  color: hsl(var(--foreground));
+  line-height: 1.3;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.description-content h3 {
+  font-size: 1.125rem;
+}
+
+.description-content h4 {
+  font-size: 1rem;
+}
+
+.description-content > :first-child {
+  margin-top: 0;
+}
+
+.description-content strong {
+  color: hsl(var(--foreground));
+  font-weight: 600;
 }
 
 .description-content ul,

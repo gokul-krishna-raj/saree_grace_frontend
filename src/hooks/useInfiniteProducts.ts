@@ -16,18 +16,27 @@ const PAGE_SIZE = 12;
 // state internally on filter change — remounting via `key` is the idiomatic React way to reset
 // all of a component's state when its identity changes, instead of an effect that watches for
 // prop changes and calls setState.
-export function useInfiniteProducts(filters: ParsedProductFilters, initialItems?: Product[]) {
+//
+// When the server already rendered the first page (`initialItems` + its `initialNextCursor`),
+// the first-page request is skipped entirely — it used to be fetched a second time on hydration.
+export function useInfiniteProducts(
+  filters: ParsedProductFilters,
+  initialItems?: Product[],
+  initialNextCursor?: string | null,
+) {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [items, setItems] = useState<Product[]>(initialItems ?? []);
   const seenIds = useRef<Set<string>>(new Set(initialItems ? initialItems.map((p) => p._id) : []));
 
   const isSearch = Boolean(filters.q);
+  const hasServerPage = initialItems !== undefined && initialNextCursor !== undefined;
+  const onServerPage = hasServerPage && cursor === undefined;
 
   const listResult = useGetProductsQuery(
-    isSearch ? skipToken : { ...toApiFilters(filters), cursor, limit: PAGE_SIZE },
+    isSearch || onServerPage ? skipToken : { ...toApiFilters(filters), cursor, limit: PAGE_SIZE },
   );
   const searchResult = useSearchProductsQuery(
-    isSearch ? { q: filters.q!, cursor, limit: PAGE_SIZE } : skipToken,
+    isSearch && !onServerPage ? { q: filters.q!, cursor, limit: PAGE_SIZE } : skipToken,
   );
 
   const { data, isLoading, isFetching, isError, refetch } = isSearch ? searchResult : listResult;
@@ -40,11 +49,19 @@ export function useInfiniteProducts(filters: ParsedProductFilters, initialItems?
     setItems((prev) => [...prev, ...fresh]);
   }, [data]);
 
-  const hasMore = data ? data.nextCursor !== null : true;
+  const hasMore = onServerPage
+    ? initialNextCursor !== null
+    : data
+      ? data.nextCursor !== null
+      : true;
 
   const loadMore = useCallback(() => {
+    if (onServerPage) {
+      if (initialNextCursor) setCursor(initialNextCursor);
+      return;
+    }
     if (!isFetching && data?.nextCursor) setCursor(data.nextCursor);
-  }, [isFetching, data]);
+  }, [onServerPage, initialNextCursor, isFetching, data]);
 
   return {
     items,

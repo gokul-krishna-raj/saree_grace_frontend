@@ -1,7 +1,8 @@
 "use client";
 
-import { Minus, Plus, X } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 import type { CartLine } from "@/hooks/useCart";
 import { formatPrice } from "@/lib/formatPrice";
@@ -10,41 +11,79 @@ export function CartLineItem({
   line,
   onUpdateQty,
   onRemove,
+  href,
+  onNavigate,
 }: {
   line: CartLine;
   onUpdateQty: (qty: number) => void;
   onRemove: () => void;
+  /** Product page link, when known. */
+  href?: string;
+  onNavigate?: () => void;
 }) {
+  const image = (
+    <span className="bg-muted relative block h-28 w-21 shrink-0 overflow-hidden rounded-sm">
+      {line.image ? (
+        <Image src={line.image} alt="" fill sizes="84px" className="object-cover" />
+      ) : null}
+    </span>
+  );
+
   return (
-    <div className="flex gap-3 py-3">
-      <div className="bg-maroon-50 relative h-20 w-16 shrink-0 overflow-hidden rounded-lg">
-        {line.image ? (
-          <Image src={line.image} alt={line.name} fill sizes="64px" className="object-cover" />
+    <div className="flex gap-4 py-5">
+      {href ? (
+        <Link href={href} onClick={onNavigate} tabIndex={-1} aria-hidden="true">
+          {image}
+        </Link>
+      ) : (
+        image
+      )}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-start justify-between gap-3">
+          {href ? (
+            <Link
+              href={href}
+              onClick={onNavigate}
+              className="text-foreground hover:text-primary line-clamp-2 text-sm leading-snug"
+            >
+              {line.name}
+            </Link>
+          ) : (
+            <p className="text-foreground line-clamp-2 text-sm leading-snug">{line.name}</p>
+          )}
+          <p className="text-foreground shrink-0 text-sm font-medium tabular-nums">
+            {formatPrice(line.price * line.qty)}
+          </p>
+        </div>
+        {line.qty > 1 ? (
+          <p className="text-muted-foreground mt-1 text-xs tabular-nums">
+            {formatPrice(line.price)} each
+          </p>
         ) : null}
-      </div>
-      <div className="flex flex-1 flex-col gap-1">
-        <p className="text-maroon-900 line-clamp-2 text-sm font-medium">{line.name}</p>
-        <p className="text-maroon-600 text-sm">{formatPrice(line.price)}</p>
-        <div className="mt-1 flex items-center gap-2">
-          {/* 44x44 minimum tap targets throughout (checklist Section 13) — these are quantity
-              controls a shopper taps often, not a place to shave a few pixels for density. */}
-          <div className="border-maroon-200 flex h-11 items-center rounded-lg border">
+        <div className="mt-auto flex items-center justify-between gap-2 pt-3">
+          {/* 44px tap targets: quantity controls get tapped a lot. */}
+          <div
+            className="border-input flex h-11 items-center rounded-md border"
+            role="group"
+            aria-label={`Quantity of ${line.name}`}
+          >
             <button
               type="button"
               onClick={() => onUpdateQty(Math.max(1, line.qty - 1))}
+              disabled={line.qty <= 1}
               aria-label={`Decrease quantity of ${line.name}`}
-              className="text-maroon-700 flex h-11 w-11 items-center justify-center"
+              className="text-foreground hover:bg-muted flex h-full w-10 items-center justify-center rounded-l-md disabled:opacity-40"
             >
               <Minus className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
-            <span className="w-6 text-center text-sm" aria-live="polite">
+            <span className="w-7 text-center text-sm tabular-nums" aria-live="polite">
               {line.qty}
             </span>
             <button
               type="button"
               onClick={() => onUpdateQty(line.qty + 1)}
               aria-label={`Increase quantity of ${line.name}`}
-              className="text-maroon-700 flex h-11 w-11 items-center justify-center"
+              className="text-foreground hover:bg-muted flex h-full w-10 items-center justify-center rounded-r-md"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -53,15 +92,12 @@ export function CartLineItem({
             type="button"
             onClick={onRemove}
             aria-label={`Remove ${line.name} from cart`}
-            className="text-maroon-500 ml-auto flex h-11 w-11 items-center justify-center hover:text-red-600"
+            className="text-muted-foreground hover:text-foreground min-h-11 px-1 text-xs underline underline-offset-2"
           >
-            <X className="h-4 w-4" aria-hidden="true" />
+            Remove
           </button>
         </div>
       </div>
-      <p className="text-maroon-900 shrink-0 text-sm font-medium">
-        {formatPrice(line.price * line.qty)}
-      </p>
     </div>
   );
 }

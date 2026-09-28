@@ -113,6 +113,20 @@ export interface Product {
 
 export type ProductSort = "newest" | "price_asc" | "price_desc" | "top_rated";
 
+// `GET /products/facets` — filter options that exist in the live catalogue for the current
+// filters. `value` is what goes in the `color`/`fabric` query param (case-insensitive).
+export interface FacetOption {
+  value: string;
+  label: string;
+  count: number;
+  hex?: string;
+}
+
+export interface ProductFacets {
+  colors: FacetOption[];
+  fabrics: FacetOption[];
+}
+
 export interface CartItem {
   _id: string;
   product: string | Product;

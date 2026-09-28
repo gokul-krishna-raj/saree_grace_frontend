@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 
 import { env } from "@/lib/env";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Terms & Conditions",
-  description: "The terms that govern your use of the Saree Grace website and orders.",
-  alternates: { canonical: "/terms-and-conditions" },
-  openGraph: {
-    title: "Terms & Conditions | Saree Grace",
-    description: "The terms that govern your use of the Saree Grace website and orders.",
-    url: "/terms-and-conditions",
-  },
-};
+  description:
+    "Terms for using Saree Grace and placing orders: pricing in Indian Rupees, order cancellation, payments, product accuracy and account responsibility.",
+  path: "/terms-and-conditions",
+});
 
 export default function TermsPage() {
   return (

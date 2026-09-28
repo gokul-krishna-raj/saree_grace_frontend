@@ -1,6 +1,6 @@
 import "./globals.css";
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 
@@ -8,12 +8,11 @@ import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { WebVitals } from "@/components/analytics/WebVitals";
 import { AuthBootstrap } from "@/components/auth/AuthBootstrap";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
-import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
-import { OrganizationJsonLd } from "@/components/seo/OrganizationJsonLd";
-import { WebSiteJsonLd } from "@/components/seo/WebSiteJsonLd";
+import { getCategories } from "@/lib/catalog";
 import { env } from "@/lib/env";
 import { StoreProvider } from "@/store/StoreProvider";
 
@@ -21,11 +20,16 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
   display: "swap",
+  // Headings only use regular/medium/semibold and the occasional italic accent.
+  style: ["normal", "italic"],
 });
 
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
+  // latin-ext carries the ₹ sign (U+20B9), shown on almost every page. Without it in the
+  // preloaded subsets the browser only discovers that font file after rendering a price, and
+  // re-paints the text when it arrives (measured: it arrived last, at "VeryHigh" priority).
+  subsets: ["latin", "latin-ext"],
   display: "swap",
 });
 
@@ -37,9 +41,6 @@ export const metadata: Metadata = {
   },
   description:
     "Authentic Elampillai sarees, soft silks, handloom cottons, and bridal collections direct from Salem master weavers.",
-  alternates: {
-    canonical: "./",
-  },
   openGraph: {
     type: "website",
     locale: "en_IN",
@@ -70,28 +71,50 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export const viewport: Viewport = {
+  themeColor: "#faf7f2",
+};
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const categories = await getCategories();
+
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable} h-full antialiased`}>
       <body
-        className="bg-background font-body text-foreground flex min-h-full flex-col pb-14 lg:pb-0"
+        className="bg-background font-body text-foreground flex min-h-full flex-col"
         suppressHydrationWarning
       >
-        <OrganizationJsonLd />
-        <WebSiteJsonLd />
+        <a
+          href="#main-content"
+          className="bg-primary text-primary-foreground sr-only z-[60] rounded-md px-4 py-2 text-sm focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+        >
+          Skip to content
+        </a>
         <GoogleAnalytics />
         <WebVitals />
         <StoreProvider>
           <AuthBootstrap />
-          <Header />
-          {children}
-          <Footer />
+          <AnnouncementBar />
+          <Header categories={categories} />
+          <div id="main-content" className="flex flex-1 flex-col" tabIndex={-1}>
+            {children}
+          </div>
+          <Footer categories={categories} />
           <CartDrawer />
-          <MobileBottomNav />
           <WhatsAppButton />
-          {/* top-center, not bottom-center: the fixed mobile bottom nav (added in Section 13)
-              would otherwise sit on top of bottom-anchored toasts on small screens. */}
-          <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              duration: 3500,
+              style: {
+                borderRadius: "6px",
+                background: "#2b1418",
+                color: "#faf7f2",
+                fontSize: "14px",
+                padding: "10px 14px",
+              },
+            }}
+          />
         </StoreProvider>
       </body>
     </html>

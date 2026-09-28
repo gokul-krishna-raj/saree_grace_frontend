@@ -1,8 +1,7 @@
-import { Mail, MapPin, Phone, ShieldCheck } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 
 import { FooterAccordionSection } from "@/components/layout/FooterAccordionSection";
-import { FooterCategoriesList } from "@/components/layout/FooterCategoriesList";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -10,13 +9,12 @@ import {
   YoutubeIcon,
 } from "@/components/layout/SocialIcons";
 import { env } from "@/lib/env";
-import { serverFetch } from "@/lib/serverApi";
 import type { Category } from "@/types";
 
 const PAYMENT_METHODS = ["UPI", "Visa", "Mastercard", "RuPay", "Net Banking"];
+const MAX_CATEGORY_LINKS = 8;
 
-const linkClass =
-  "text-primary-foreground/75 hover:text-primary-foreground hover:underline text-sm transition-colors";
+const linkClass = "text-sm text-white/70 transition-colors hover:text-white";
 
 // The WhatsApp number is stored as `<countrycode><10 digits>` (e.g. "919500750704") — this is
 // purely a display formatter, the raw value is what's used in tel:/wa.me hrefs.
@@ -29,15 +27,9 @@ function formatPhoneForDisplay(raw: string) {
   return `+${digits}`;
 }
 
-export async function Footer() {
+export function Footer({ categories = [] }: { categories?: Category[] }) {
   const whatsappNumber = env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-  let initialCategories: Category[] = [];
-  try {
-    const categoriesData = await serverFetch<{ categories: Category[] }>("/categories");
-    initialCategories = categoriesData?.categories ?? [];
-  } catch {
-    // Non-blocking fallback if backend is offline during build
-  }
+  const topLevel = categories.filter((category) => category.parentCategory === null);
 
   const socialLinks = [
     { href: env.NEXT_PUBLIC_INSTAGRAM_URL, label: "Instagram", Icon: InstagramIcon },
@@ -51,155 +43,122 @@ export async function Footer() {
   );
 
   return (
-    <footer className="border-primary-foreground/15 bg-primary text-primary-foreground border-t pb-20 lg:pb-0">
-      <div className="mx-auto grid max-w-6xl gap-x-8 px-4 py-12 sm:grid-cols-2 sm:gap-y-10 lg:grid-cols-5">
-        <div className="border-primary-foreground/15 border-b pb-4 sm:col-span-2 sm:border-none sm:pb-0 lg:col-span-1">
-          <p className="font-display text-primary-foreground text-2xl font-bold tracking-tight">
+    <footer className="bg-maroon-950 text-white">
+      <div className="container-page grid gap-x-10 pt-14 pb-6 md:grid-cols-12 md:gap-y-12 lg:pt-20">
+        <div className="pb-8 md:col-span-12 lg:col-span-3 lg:pb-0">
+          <Link href="/" className="font-display text-3xl leading-none">
             Saree Grace
+          </Link>
+          <p className="mt-5 max-w-sm text-sm leading-relaxed text-white/70">
+            Authentic Elampillai sarees, sourced directly from weaver families in Salem, Tamil Nadu
+            — from everyday cottons to festive silks, delivered across India.
           </p>
-          <p className="text-primary-foreground/80 mt-3 text-sm leading-relaxed">
-            Saree Grace brings authentic Elampillai sarees straight from weaver families in Salem,
-            Tamil Nadu, to your doorstep. From everyday cotton weaves to festive silk, we keep
-            online saree shopping simple, honest, and rooted in real craftsmanship.
-          </p>
-          <nav aria-label="About Saree Grace" className="mt-4 flex flex-col gap-2">
-            <Link href="/about" className={linkClass}>
-              Our Story
+          {socialLinks.length > 0 ? (
+            <ul className="mt-6 flex items-center gap-2">
+              {socialLinks.map(({ href, label, Icon }) => (
+                <li key={label}>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white/80 transition-colors hover:border-white/50 hover:text-white"
+                  >
+                    <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+
+        <div className="md:col-span-4 lg:col-span-2">
+          <FooterAccordionSection title="Shop">
+            <Link href="/products" className={linkClass}>
+              All Sarees
+            </Link>
+            {topLevel.slice(0, MAX_CATEGORY_LINKS).map((category) => (
+              <Link key={category._id} href={`/categories/${category.slug}`} className={linkClass}>
+                {category.name}
+              </Link>
+            ))}
+            <Link href="/categories" className={linkClass}>
+              All Categories
+            </Link>
+          </FooterAccordionSection>
+        </div>
+
+        <div className="md:col-span-4 lg:col-span-2">
+          <FooterAccordionSection title="Help">
+            <Link href="/account/orders" className={linkClass}>
+              Track Your Order
+            </Link>
+            <Link href="/shipping-policy" className={linkClass}>
+              Shipping Policy
+            </Link>
+            <Link href="/refund-policy" className={linkClass}>
+              Returns &amp; Refunds
+            </Link>
+            <Link href="/faq" className={linkClass}>
+              FAQ
             </Link>
             <Link href="/contact" className={linkClass}>
               Contact Us
             </Link>
-          </nav>
+          </FooterAccordionSection>
         </div>
 
-        <FooterAccordionSection title="Shop">
-          <Link href="/products" className={linkClass}>
-            All Sarees
-          </Link>
-          <Link href="/products?sort=newest" className={linkClass}>
-            New Arrivals
-          </Link>
-          <Link href="/products?sort=top_rated" className={linkClass}>
-            Best Sellers
-          </Link>
-          <Link href="/products?handloomOnly=true" className={linkClass}>
-            Elampillai Handloom Collection
-          </Link>
-          <Link href="/account/orders" className={linkClass}>
-            Track Order
-          </Link>
-        </FooterAccordionSection>
+        <div className="md:col-span-4 lg:col-span-2">
+          <FooterAccordionSection title="Saree Grace">
+            <Link href="/about" className={linkClass}>
+              Our Story
+            </Link>
+            <Link href="/privacy-policy" className={linkClass}>
+              Privacy Policy
+            </Link>
+            <Link href="/terms-and-conditions" className={linkClass}>
+              Terms &amp; Conditions
+            </Link>
+          </FooterAccordionSection>
+        </div>
 
-        <FooterAccordionSection title="Categories">
-          <FooterCategoriesList initialCategories={initialCategories} />
-        </FooterAccordionSection>
-
-        <FooterAccordionSection title="Customer Information">
-          <Link href="/shipping-policy" className={linkClass}>
-            Shipping Policy
-          </Link>
-          <Link href="/refund-policy" className={linkClass}>
-            Return &amp; Refund Policy
-          </Link>
-          <Link href="/privacy-policy" className={linkClass}>
-            Privacy Policy
-          </Link>
-          <Link href="/terms-and-conditions" className={linkClass}>
-            Terms &amp; Conditions
-          </Link>
-          <Link href="/faq" className={linkClass}>
-            FAQ
-          </Link>
-          <Link href="/contact" className={linkClass}>
-            Contact Us
-          </Link>
-        </FooterAccordionSection>
-
-        <div className="border-primary-foreground/15 flex flex-col gap-3 border-t pt-4 sm:col-span-2 sm:border-none sm:pt-0 lg:col-span-1">
-          <p className="text-primary-foreground text-sm font-semibold">Get in Touch</p>
-          <p className="text-primary-foreground/80 flex items-start gap-2 text-sm">
-            <MapPin className="text-accent mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>Saree Grace, Elampillai, Salem, Tamil Nadu</span>
+        <address className="flex flex-col gap-3 pt-8 not-italic md:col-span-12 md:pt-0 lg:col-span-3">
+          <h2 className="mb-1 text-sm font-medium tracking-wide">Get in touch</h2>
+          <p className="flex items-start gap-2.5 text-sm text-white/70">
+            <MapPin className="text-gold-300 mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            Elampillai, Salem, Tamil Nadu
           </p>
           {whatsappNumber ? (
-            <a
-              href={`tel:+${whatsappNumber}`}
-              className="text-primary-foreground/80 hover:text-primary-foreground flex items-center gap-2 text-sm transition-colors"
-            >
-              <Phone className="text-accent h-4 w-4 shrink-0" aria-hidden="true" />
+            <a href={`tel:+${whatsappNumber}`} className={`${linkClass} flex items-center gap-2.5`}>
+              <Phone className="text-gold-300 h-4 w-4 shrink-0" aria-hidden="true" />
               {formatPhoneForDisplay(whatsappNumber)}
             </a>
           ) : null}
           <a
             href={`mailto:${env.NEXT_PUBLIC_CONTACT_EMAIL}`}
-            className="text-primary-foreground/80 hover:text-primary-foreground flex items-center gap-2 text-sm transition-colors"
+            className={`${linkClass} flex items-center gap-2.5 break-words`}
           >
-            <Mail className="text-accent h-4 w-4 shrink-0" aria-hidden="true" />
+            <Mail className="text-gold-300 h-4 w-4 shrink-0" aria-hidden="true" />
             {env.NEXT_PUBLIC_CONTACT_EMAIL}
           </a>
-
-          {socialLinks.length > 0 ? (
-            <div className="mt-2 flex items-center gap-3">
-              {socialLinks.map(({ href, label, Icon }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="hover:text-accent text-primary-foreground/80 transition-colors"
-                >
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </a>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        </address>
       </div>
 
-      <div className="border-primary-foreground/15 border-t">
-        <div className="mx-auto flex max-w-6xl flex-col items-start gap-3 px-4 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-primary-foreground flex items-center gap-2 text-sm font-medium">
-            <ShieldCheck className="text-accent h-4 w-4" aria-hidden="true" />
-            We Accept
-          </div>
-          <div className="flex flex-wrap gap-2">
+      <div className="container-page">
+        <div className="flex flex-col gap-4 border-t border-white/10 py-6 text-xs text-white/55 md:flex-row md:items-center md:justify-between">
+          <p>© {new Date().getFullYear()} Saree Grace. All rights reserved.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1">Secure payments via Razorpay</span>
             {PAYMENT_METHODS.map((method) => (
               <span
                 key={method}
-                className="border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/90 rounded-md border px-2.5 py-1 text-xs font-medium"
+                className="rounded-sm border border-white/15 px-2 py-0.5 text-[11px] text-white/70"
               >
                 {method}
               </span>
             ))}
           </div>
-          <p className="text-primary-foreground/60 text-xs">Secure checkout powered by Razorpay</p>
         </div>
-      </div>
-
-      <div className="border-primary-foreground/15 border-t">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-4 text-center sm:flex-row sm:justify-between sm:text-left">
-          <p className="text-primary-foreground/60 text-xs">
-            © {new Date().getFullYear()} Saree Grace. All rights reserved.
-          </p>
-          <nav aria-label="Legal" className="flex gap-4 text-xs">
-            <Link
-              href="/privacy-policy"
-              className="text-primary-foreground/70 hover:text-primary-foreground"
-            >
-              Privacy Policy
-            </Link>
-            <Link
-              href="/terms-and-conditions"
-              className="text-primary-foreground/70 hover:text-primary-foreground"
-            >
-              Terms &amp; Conditions
-            </Link>
-          </nav>
-        </div>
-        <p className="text-primary-foreground/50 pb-4 text-center text-xs">
-          Online saree shopping from Elampillai, Salem, Tamil Nadu.
-        </p>
       </div>
     </footer>
   );

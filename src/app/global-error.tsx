@@ -1,7 +1,8 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
+
+import { reportError } from "@/lib/reportError";
 
 // Only reached if the ROOT LAYOUT ITSELF throws (StoreProvider, AuthBootstrap, etc.) — replaces
 // the entire document, so it must define its own <html>/<body> and cannot rely on globals.css
@@ -17,7 +18,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error(error);
-    Sentry.captureException(error);
+    reportError(error);
   }, [error]);
 
   return (

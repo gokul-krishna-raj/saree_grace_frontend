@@ -26,13 +26,13 @@ describe("WhatsAppButton component", () => {
     );
   });
 
-  it("applies responsive positioning and z-index classes to clear mobile bottom nav", () => {
+  it("is fixed bottom-right and exposes the hook class used to clear sticky purchase bars", () => {
     const { container } = render(<WhatsAppButton />);
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper).toHaveClass("fixed");
-    expect(wrapper).toHaveClass("z-40");
+    expect(wrapper).toHaveClass("whatsapp-fab");
     expect(wrapper).toHaveClass("right-4");
-    expect(wrapper).toHaveClass("bottom-20");
+    expect(wrapper).toHaveClass("bottom-4");
     expect(wrapper).toHaveClass("lg:bottom-6");
     expect(wrapper).toHaveClass("lg:right-6");
   });

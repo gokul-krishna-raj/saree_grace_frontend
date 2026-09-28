@@ -57,7 +57,7 @@ export function WishlistItemCard({ product }: { product: WishlistProductSummary 
 
   return (
     <div className="border-maroon-50 flex flex-col overflow-hidden rounded-lg border bg-white">
-      <div className="bg-maroon-50 relative aspect-[3/4] w-full">
+      <div className="bg-maroon-50 relative aspect-[4/5] w-full">
         <Link
           href={`/products/${product.slug}`}
           aria-label={product.name}

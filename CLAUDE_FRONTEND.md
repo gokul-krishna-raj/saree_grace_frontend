@@ -23,64 +23,44 @@ Tailwind CSS v4, Redux Toolkit + RTK Query, react-hook-form + zod.
   anything that must be crawlable (product/category pages — see Section 15). Client
   components only where interactivity is required (cart, filters, forms).
 
-## Design tokens (maroon / gold / cream — premium, mobile-first)
+## Design tokens (maroon / gold / ivory — premium, mobile-first)
 
-Tailwind v4 is CSS-first in this project (`@tailwindcss/postcss`, no `tailwind.config.ts`).
-Tokens are defined via `@theme` in `src/app/globals.css`, not a JS config file — this is a
-deliberate deviation from `saree-grace-frontend-packages.md`'s `tailwind.config.ts` snippet,
-which targets Tailwind v3. See NOTES.md for the full note.
+Tailwind v4 is CSS-first (`@tailwindcss/postcss`, no `tailwind.config.ts`). **One** token system
+lives in `src/app/globals.css` (consolidated in the 2026-09 modernization pass — see
+`MODERNIZATION_AUDIT.md`):
 
-```css
-@theme {
-  --color-maroon-50: #fbeaec;
-  --color-maroon-100: #f0c4ca;
-  --color-maroon-200: #e19aa5;
-  --color-maroon-400: #b24a5c;
-  --color-maroon-600: #7a2635;
-  --color-maroon-700: #5e1d29;
-  --color-maroon-900: #3a1218;
+- **Semantic tokens** (HSL triplets on `:root`, alpha-capable): `bg-background` (ivory
+  `#faf7f2`), `text-foreground` (wine-ink), `bg-primary` (maroon `#6a1f33`), `text-accent`
+  (text-safe antique gold `#7a5423`), `text-muted-foreground`, `bg-muted`, `bg-cream`,
+  `border-border`, `text-sale`, `text-success`. Prefer these in new code.
+- **Scales**: `maroon-50…950` and `gold-50…700` — every step is defined (the old scale skipped
+  300/500/800/950, which silently rendered ~40 classes with no colour).
+- Measured contrast on ivory: foreground 16.3, primary 10.7, muted-foreground 6.1, accent 6.4,
+  sale 7.1. `gold-400/500` are **decorative only** (~3.3:1) — never body text on light surfaces.
+  Text on a gold fill uses `text-maroon-900`. Verify any new combination with a contrast checker.
+- **Radius**: `--radius: 0.5rem` — restrained rounding (`rounded-md` / `rounded-sm` for images and
+  badges, `rounded-full` for pills/icon buttons). No arbitrary radii.
+- **Shadows**: rare and soft (`shadow-soft`, `shadow-elegant`). Cards sit on whitespace and borders,
+  not drop shadows. No gradient buttons — the legacy `gold`/`maroon`/`premium` Button variants and
+  `bg-gradient-*` utilities still exist for API compatibility but render as quiet solids.
 
-  --color-gold-50: #fdf8ec;
-  --color-gold-100: #f8e8be;
-  --color-gold-400: #d9a94a;
-  --color-gold-500: #c4922e;
-  --color-gold-600: #a5771f;
+### Layout + type utilities (defined with `@utility` in globals.css)
 
-  --color-cream: #faf6f0;
+- `container-page` — the one page container (max 88rem, 16/24/40px gutters). Use it instead of
+  ad-hoc `mx-auto max-w-6xl px-4`.
+- `section-y` — vertical rhythm for homepage/landing sections.
+- `eyebrow` — small uppercase tracking label above headings.
+- `text-display` (hero), `text-heading-xl` (page/section titles), `text-heading-lg` (sub-sections).
+- `SectionHeading` (`components/ui/SectionHeading.tsx`) — eyebrow + title + description + optional
+  "view all" link; use it for every storefront section header.
+- `--header-height` (3.5rem mobile / 4.5rem desktop) — use for sticky offsets
+  (`top-[var(--header-height)]`).
 
-  --font-heading: var(--font-playfair);
-  --font-body: var(--font-inter);
-}
-```
+### Motion
 
-Usage: `bg-maroon-700`, `text-gold-500`, `bg-cream`, `font-heading`, `font-body` — these
-become real Tailwind utilities automatically (Tailwind v4 `@theme` vars are utility-generating).
-
-- **Primary CTA**: `bg-maroon-700 text-white hover:bg-maroon-900`.
-- **Accent/highlight** (gold): badges, ratings, "handloom certified" marks, hover underlines —
-  never large fill areas (gold-on-gold or gold-on-white body text fails contrast, see below).
-- **Background**: `bg-cream` for page backgrounds, plain white (`bg-white`) for cards/surfaces
-  sitting on cream, so cards visually lift off the page.
-- **Contrast rule** (Section 16 accessibility depends on this) — **corrected in Section 14 after
-  a real Lighthouse audit failed the original version of this rule**: `gold-600` text on a
-  `gold-*` background measures 3.28:1 (needs 4.5:1) — it is NOT actually safe, despite being the
-  darkest gold shade, and the original guidance here was wrong. Use `text-maroon-900` for any
-  text sitting on a gold background (the `Badge` "gold" variant does this). Never
-  `gold-400`/`gold-500` text on white either. **Don't trust this rule by eyeballing a shade name
-  — verify any new gold-on-light combination with an actual contrast checker (or Lighthouse)
-  before shipping it**, the same way this correction was found.
-- Radius scale: `rounded-lg` (8px) default for cards/inputs, `rounded-full` for pills/avatars.
-  No ad-hoc arbitrary values (`rounded-[7px]`) — if the scale doesn't have it, that's a signal
-  to use a scale value, not to invent one.
-- Spacing: stick to Tailwind's default scale (4px steps). No `px-[13px]`-style arbitrary
-  spacing.
-
-## Typography
-
-- Headings: **Playfair Display** (serif, elegant) via `next/font/google`, CSS var `--font-playfair`.
-- Body: **Inter** (clean sans) via `next/font/google`, CSS var `--font-inter`.
-- Loaded once in `src/app/layout.tsx`, exposed as CSS vars, consumed via `font-heading`/`font-body`
-  Tailwind utilities — never a render-blocking `<link>` tag.
+Short, subtle, CSS-only (`animate-fade-in`, `animate-slide-in-*`, `animate-scale-in`,
+`animate-pop`). `prefers-reduced-motion` is honoured globally in globals.css. No animation on
+initial render of above-the-fold content (it delays LCP).
 
 ## Dark mode
 
@@ -104,6 +84,51 @@ lucide's set is large enough to cover admin/commerce UI needs.
 - `Skeleton` is the default loading UI for any data-fetching component — spinners only for
   in-flight actions with no meaningful layout to placeholder (e.g. a submit button).
 - Toasts via `react-hot-toast`, one `<Toaster />` mounted once in the root layout.
+- `Skeleton` announces "Loading" by default; inside a grid, wrap placeholders in `SkeletonGroup`
+  (one announcement) and pass `decorative`.
+- Dialogs: `Modal`, `Drawer` (left/right/bottom sheet, optional sticky `footer`) and the search
+  dialog all use `useFocusTrap` + `useScrollLock` (`hooks/useFocusTrap.ts`). Title ids come from
+  `useId()` — never hard-code dialog ids.
+- `Disclosure` (`components/ui/Disclosure.tsx`) — native `<details>` accordion, zero JS.
+
+## Rendering & performance rules (from the modernization pass)
+
+- **No `PersistGate` around the app.** It blanked the server HTML. Guest-cart consumers
+  (`useCart`, `useCartCount`) handle "not rehydrated yet" themselves, and `useHydrated()` gates
+  anything that depends on localStorage so the first client render matches the server.
+- Storefront data is fetched **once, on the server** (`serverFetch`, `lib/catalog.ts`) and passed
+  down — don't re-request the same list from RTK Query on hydration.
+- PDP and category pages are ISR (`revalidate = 300` + `generateStaticParams() { return [] }`).
+- `sanitize-html` is server-only: `components/product/ProductDescription.tsx` and `lib/richText.ts`
+  must never be imported from a `"use client"` module (use `ProductSpecs.tsx` / `lib/plainText.ts`).
+- `lib/env.ts` is zod-free on purpose (it's in every client bundle).
+- Sentry loads only when `NEXT_PUBLIC_SENTRY_DSN` is set (`instrumentation-client.ts`,
+  `lib/reportError.ts`) — never `import * as Sentry` in client code.
+- Heavy, on-demand UI uses `next/dynamic` (quick view, review form).
+- **LCP images rendered inside client components** (listing cards, PDP gallery) are hinted from
+  the Server Component with `preloadImage()` (`lib/preloadImage.ts`) using the shared `sizes`
+  constants in `lib/imageSizes.ts` — next/image's `preload` prop is a no-op in client components.
+  Above-the-fold `<Image>`s use `loading="eager"` + `fetchPriority="high"`, never a fade-in.
+- **Listing components must not call `useSearchParams()` directly** — use `useProductFilters()` /
+  `useListingParams()`, which read from `ListingParamsContext`. On ISR category pages the live
+  listing (`ProductListingClient`) renders client-side, and the Suspense fallback is
+  `ProductListingStatic` (same listing, empty params) so the HTML contains the real product grid.
+  Calling `useSearchParams()` anywhere in that tree would bring back an HTML page with no products.
+- Listings continue from the server-rendered first page (`serverFetchPage` → `initialNextCursor`)
+  — don't re-request page one on hydration.
+- **Mixed-case product/category URLs are lowercased in `src/proxy.ts`**, not in the page. A
+  page-level redirect gets cached by ISR under the mixed-case path, which on a case-insensitive
+  filesystem is the same file as the real page (observed: a redirect loop on the canonical URL).
+- Tracking params (`utm_*`, `gclid`…) must not change rendering: use `hasListingParams()` to
+  decide whether a listing URL is "filtered" (noindex, no server first page).
+- Empty categories are `noindex, follow` and left out of the sitemap until they have products.
+- Headings: product cards take `headingLevel` (`h2` directly under a page h1, `h3` inside a
+  section); `Disclosure` titles are `h2`; description Markdown maps its shallowest heading to h3.
+- Base element styles live in `@layer base` in globals.css — unlayered rules would silently beat
+  every Tailwind utility.
+- JSON-LD goes through `components/seo/JsonLd.tsx` (escapes `<`). Page metadata goes through
+  `pageMetadata()` in `lib/seo.ts` (canonical + OG + Twitter from one input; strips a duplicated
+  "| Saree Grace" suffix).
 
 ## Redux / RTK Query conventions
 

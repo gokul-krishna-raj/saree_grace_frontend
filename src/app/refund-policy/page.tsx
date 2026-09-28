@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 
 import { env } from "@/lib/env";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Return & Refund Policy",
-  description: "Return eligibility, exchange, and refund timelines for Saree Grace orders.",
-  alternates: { canonical: "/refund-policy" },
-  openGraph: {
-    title: "Return & Refund Policy | Saree Grace",
-    description: "Return eligibility, exchange, and refund timelines for Saree Grace orders.",
-    url: "/refund-policy",
-  },
-};
+  description:
+    "Return unused sarees within 7 days of delivery. Damaged or incorrect items reported within 48 hours are replaced or refunded; refunds take 5–7 business days.",
+  path: "/refund-policy",
+});
 
 export default function RefundPolicyPage() {
   return (

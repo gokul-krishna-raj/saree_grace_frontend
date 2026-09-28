@@ -9,7 +9,10 @@ jest.mock("next/navigation", () => ({
   useSearchParams: () => currentSearchParams,
 }));
 
-import { useProductFilters } from "./useProductFilters";
+import { ListingParamsFromUrl, useProductFilters } from "./useProductFilters";
+
+// The hook reads the URL through the listing's params provider (fed by useSearchParams).
+const wrapper = ListingParamsFromUrl;
 
 describe("useProductFilters", () => {
   beforeEach(() => {
@@ -19,7 +22,7 @@ describe("useProductFilters", () => {
 
   it("writes a single filter change to the URL, preserving other active filters", () => {
     currentSearchParams = new URLSearchParams("sort=price_asc&handloomOnly=true");
-    const { result } = renderHook(() => useProductFilters());
+    const { result } = renderHook(() => useProductFilters(), { wrapper });
 
     result.current.updateFilters({ fabric: "Silk" });
 
@@ -30,7 +33,7 @@ describe("useProductFilters", () => {
   });
 
   it("writes a filter combination (category + price range + handloom) to the URL at once", () => {
-    const { result } = renderHook(() => useProductFilters());
+    const { result } = renderHook(() => useProductFilters(), { wrapper });
 
     result.current.updateFilters({
       category: "cat1",
@@ -48,7 +51,7 @@ describe("useProductFilters", () => {
   });
 
   it("writes a multi-occasion selection to the URL as a single comma-separated param", () => {
-    const { result } = renderHook(() => useProductFilters());
+    const { result } = renderHook(() => useProductFilters(), { wrapper });
 
     result.current.updateFilters({ occasions: ["occ1", "occ2"] });
 
@@ -59,7 +62,7 @@ describe("useProductFilters", () => {
 
   it("navigates to the bare path when all filters are cleared", () => {
     currentSearchParams = new URLSearchParams("fabric=Silk");
-    const { result } = renderHook(() => useProductFilters());
+    const { result } = renderHook(() => useProductFilters(), { wrapper });
 
     result.current.setFilters({ sort: "newest" });
 

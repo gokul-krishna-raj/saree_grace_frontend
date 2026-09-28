@@ -1,3 +1,4 @@
+import { JsonLd } from "@/components/seo/JsonLd";
 import { env } from "@/lib/env";
 
 export function WebSiteJsonLd() {
@@ -20,10 +21,5 @@ export function WebSiteJsonLd() {
     },
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-    />
-  );
+  return <JsonLd data={structuredData} />;
 }

@@ -1040,3 +1040,82 @@ env.ts` validates these at module-load time and `next build` evaluates every rou
   `mobile-chrome` project (Pixel 7 viewport + UA emulation) is the closest substitute actually
   exercised, repeatedly, throughout Sections 17–20 — but it is emulation, not a real device, and
   should not be reported as equivalent.
+
+## Modernization pass (2026-09-28) — assumptions & flags for human review
+
+Full audit and implementation report: `MODERNIZATION_AUDIT.md`.
+
+- **Removed the mobile bottom tab bar** (`MobileBottomNav`, Section 13). The header now carries
+  menu/search/wishlist/cart on phones and the hamburger menu has account/orders. Reason: it took
+  64px of permanent screen space and collided with the new PDP sticky purchase bar. Reversible —
+  flagging because it was an explicit earlier checklist item.
+- **Removed the free-text Fabric / Colour filter inputs** — replaced in the production-readiness
+  pass below by catalogue-driven option lists (`/products/facets`).
+- **Added the "In stock only" filter** — the backend already supported `inStockOnly`.
+- **Cart no longer shows a shipping fee.** `useCart` used a "free over ₹999, else ₹99" rule that
+  the backend never applies (it charges ₹40–₹130 by state, `computeShippingFee`). The cart now
+  says "Calculated at checkout"; checkout computes the real fee once a state is chosen.
+- **Price sort was broken on the backend — fixed in the production-readiness pass below.**
+- **Product 404s are real 404s now.** With ISR (`generateStaticParams` returning `[]`),
+  `notFound()` returns HTTP 404 — the earlier note that this route "can't return a real 404
+  status" no longer applies.
+- **Descriptions are Markdown.** Most live product descriptions use `##`, `**bold**` and `*`
+  lists; a small server-side converter (`markdownToHtml` in `lib/richText.ts`) renders them, and
+  the output still goes through `sanitize-html`.
+- `DEFAULT_WHATSAPP_NUMBER` in `lib/whatsapp.ts` is still the placeholder "for testing" number —
+  set `NEXT_PUBLIC_WHATSAPP_NUMBER` before launch.
+- Hero photography: `/images/hero/slide_1.webp` (desktop) and `/hero-saree-model.webp` (mobile),
+  art-directed with `getImageProps`. Unused old hero/banner files in `public/images/hero` were
+  left in place (not shipped unless referenced).
+- `e2e/purchase-journey.spec.ts` — now run against a local sandbox; see "Running E2E safely".
+
+## Production-readiness pass (2026-09-29)
+
+Full report: `MODERNIZATION_AUDIT.md` → "Production-readiness pass".
+
+- **Price sorting fixed (backend).** Persisted `Product.sortPrice` + `(value, _id)` keyset cursor;
+  `top_rated` had the same cursor bug and is fixed too. Verified on a read-only copy of the real
+  catalogue. **The Atlas backfill has NOT been run** (owner decision): run
+  `npm run migrate:sort-price -- --dry-run`, then without `--dry-run`, against Atlas before (or
+  right after) deploying — until then every existing product sorts as ₹0.
+- **Atlas side effect to know about:** during testing, the hot-reloading dev backend (connected to
+  Atlas via `.env`) restarted with the new model and Mongoose `autoIndex` created the two new
+  indexes on the Atlas `products` collection (`isActive_1_sortPrice_1__id_-1`,
+  `category_1_isActive_1_sortPrice_1__id_-1`). No documents were modified. The indexes are
+  needed by the deployed code anyway; drop them only if you roll the change back.
+- **Colour filter** is built from `/products/facets` (real values on active variants, with
+  counts and the variants' own swatch hex). **Fabric** is hidden: the catalogue has one fabric
+  value in total, and it's "Pink" — a data-entry error on one variant's `fabric` attribute.
+  Colour names also have near-duplicates from spelling ("grey"/"gray", "lavender"/"lavander",
+  "voilet") that show as separate options until the data is cleaned.
+- **Catalogue SEO content (owner):** several products share identical admin SEO titles /
+  descriptions (the three "Kubera Pattu Saree" listings, `kalyani-cotton-sarees` vs `-3`,
+  `soft-silk-sarees` vs `-4`, and the fancy-silk product vs its category). Two titles exceed 70
+  characters. Over-long descriptions are now trimmed at a word boundary automatically; titles are
+  left as entered.
+- **Empty categories** (Bridal, Cotton, Couple Combos, Kerala Cotton, Silk Cotton, Wedding — no
+  active products) are `noindex, follow` and excluded from the sitemap until they have products.
+- **Outage behaviour:** pages already generated keep serving their last good copy while the API
+  is down (ISR). A product/category page that has never been generated returns Next's plain 500
+  until the API is back — rendering a fallback instead would get cached and could be indexed.
+- **WhatsApp number — launch blocker.** No real number exists in the project config or docs.
+  `lib/whatsapp.ts` still falls back to the placeholder `DEFAULT_WHATSAPP_NUMBER`, and the
+  floating button uses it whenever `NEXT_PUBLIC_WHATSAPP_NUMBER` is unset. Set the env var.
+- **Coupons:** `lib/coupons.ts` exists but checkout has no coupon field and the backend has no
+  coupon support — nothing to verify.
+
+### Running E2E safely
+
+Never against Atlas — the spec creates orders and accounts. A sandbox that worked:
+
+1. Local replica-set MongoDB (transactions need it):
+   `mongod --dbpath <dir> --port 27027 --replSet rs0` then `rs.initiate()`.
+2. Optionally copy the catalogue read-only from Atlas (categories/occasions/products/reviews),
+   then `npm run migrate:sort-price` against the local DB.
+3. `npm run seed` in the backend with `MONGODB_URI` pointing at the local DB (seed accounts are
+   pre-verified; override `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` with throwaway values).
+4. Backend with `PORT=4100`, the local `MONGODB_URI`, a matching `CORS_ORIGINS`, and **empty**
+   `EMAIL_*`, `RAZORPAY_*`, `CLOUDINARY_*`, `GOOGLE_CLIENT_ID` (email is then stubbed, and
+   checkout stops at the Razorpay boundary — the spec accepts that).
+5. Frontend built/started with `NEXT_PUBLIC_API_BASE_URL=http://localhost:4100/api/v1`, then
+   `E2E_BASE_URL=<frontend url> npm run test:e2e` (one worker — the specs share one customer).

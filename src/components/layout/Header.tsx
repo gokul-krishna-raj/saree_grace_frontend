@@ -2,129 +2,153 @@
 
 import { Heart, Menu, Search, ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { useCartCount } from "@/hooks/useCartCount";
 import { useWishlistCount } from "@/hooks/useWishlistCount";
+import { cn } from "@/lib/cn";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setCartDrawerOpen, setMobileMenuOpen } from "@/store/slices/uiSlice";
+import type { Category } from "@/types";
 
+import { CategoriesMenu } from "./CategoriesMenu";
 import { MobileMenu } from "./MobileMenu";
 import { SearchOverlay } from "./SearchOverlay";
 
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/products", label: "Shop" },
-  { href: "/categories", label: "Categories" },
-  { href: "/about", label: "About" },
+export const NAV_LINKS = [
+  { href: "/products", label: "Shop All" },
+  { href: "/about", label: "Our Story" },
   { href: "/contact", label: "Contact" },
 ];
 
-export function Header() {
+const iconButtonClass =
+  "text-foreground/80 hover:text-foreground hover:bg-muted relative flex h-11 w-11 items-center justify-center rounded-full transition-colors";
+
+function CountBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      key={count}
+      className="bg-primary text-primary-foreground animate-pop absolute top-1.5 right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] leading-none font-semibold tabular-nums"
+      aria-hidden="true"
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+export function Header({ categories = [] }: { categories?: Category[] }) {
   const dispatch = useAppDispatch();
+  const pathname = usePathname();
   const cartCount = useCartCount();
   const wishlistCount = useWishlistCount();
   const authStatus = useAppSelector((state) => state.auth.status);
   const mobileMenuOpen = useAppSelector((state) => state.ui.mobileMenuOpen);
   const [searchOpen, setSearchOpen] = useState(false);
+  const topLevelCategories = categories.filter((category) => category.parentCategory === null);
+  const accountHref = authStatus === "authenticated" ? "/account" : "/login";
 
   return (
-    <header className="border-border bg-card/95 sticky top-0 z-40 border-b backdrop-blur-md">
-      {/* <div className="bg-gradient-maroon text-primary-foreground px-4 py-2 text-center text-xs font-medium tracking-wide sm:text-sm">
-        Authentic Elampillai Handloom Sarees Direct From Master Weavers · Free Shipping Across India
-      </div> */}
-      <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between px-4 lg:px-6">
-        <div className="flex w-11 items-center justify-start lg:hidden">
+    <header className="border-border bg-background sticky top-0 z-40 border-b">
+      <div className="container-page grid h-14 grid-cols-[1fr_auto_1fr] items-center lg:h-[72px]">
+        {/* Left — mobile: menu + search · desktop: primary navigation */}
+        <div className="flex items-center gap-1 lg:gap-0">
           <button
             type="button"
             onClick={() => dispatch(setMobileMenuOpen(true))}
             aria-label="Open menu"
             aria-expanded={mobileMenuOpen}
-            className="text-foreground/80 hover:bg-muted hover:text-primary focus-visible:outline-ring flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+            className={cn(iconButtonClass, "-ml-2.5 lg:hidden")}
           >
-            <Menu className="h-6 w-6" aria-hidden="true" />
+            <Menu className="h-5 w-5" aria-hidden="true" />
           </button>
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search"
+            aria-expanded={searchOpen}
+            aria-haspopup="dialog"
+            className={cn(iconButtonClass, "lg:hidden")}
+          >
+            <Search className="h-5 w-5" aria-hidden="true" />
+          </button>
+
+          <nav aria-label="Main" className="hidden items-center gap-7 lg:flex">
+            <Link
+              href="/products"
+              aria-current={pathname === "/products" ? "page" : undefined}
+              className="link-underline text-foreground py-1 text-[13px] font-medium tracking-wide"
+            >
+              Shop All
+            </Link>
+            <CategoriesMenu categories={topLevelCategories} />
+            {NAV_LINKS.slice(1).map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={pathname === link.href ? "page" : undefined}
+                className="link-underline text-foreground py-1 text-[13px] font-medium tracking-wide"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </div>
 
+        {/* Centre — wordmark */}
         <Link
           href="/"
-          className="font-display text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xl font-bold tracking-tight lg:static lg:top-auto lg:translate-x-0 lg:-translate-y-0 lg:text-2xl"
+          className="font-display text-primary flex min-h-11 items-center px-2 text-[1.375rem] leading-none tracking-tight whitespace-nowrap lg:text-[1.75rem]"
         >
           Saree Grace
         </Link>
 
-        <nav className="hidden flex-1 justify-center gap-8 lg:flex">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="link-underline text-foreground/80 hover:text-primary py-1 text-sm font-medium transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex w-11 items-center justify-end lg:hidden">
+        {/* Right — search (desktop), account, wishlist, cart */}
+        <div className="flex items-center justify-end gap-0.5">
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
-            aria-label="Open search"
+            aria-label="Search"
             aria-expanded={searchOpen}
-            aria-controls="search-dialog"
-            className="text-foreground/80 hover:bg-muted hover:text-primary focus-visible:outline-ring flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+            aria-haspopup="dialog"
+            className="border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground mr-2 hidden h-10 w-56 items-center gap-2.5 rounded-full border px-4 text-sm transition-colors lg:flex"
           >
-            <Search className="h-5 w-5" aria-hidden="true" />
+            <Search className="h-4 w-4" aria-hidden="true" />
+            <span>Search sarees</span>
           </button>
-        </div>
-
-        <div className="hidden items-center gap-1 lg:ml-auto lg:flex">
-          <button
-            type="button"
-            onClick={() => setSearchOpen(true)}
-            aria-label="Open search"
-            aria-expanded={searchOpen}
-            aria-controls="search-dialog"
-            className="text-foreground/80 hover:bg-muted hover:text-primary focus-visible:outline-ring flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+          <Link
+            href={accountHref}
+            aria-label="Account"
+            className={cn(iconButtonClass, "hidden lg:flex")}
           >
-            <Search className="h-5 w-5" aria-hidden="true" />
-          </button>
+            <User className="h-5 w-5" aria-hidden="true" />
+          </Link>
           <Link
             href="/wishlist"
             aria-label={`Wishlist, ${wishlistCount} item${wishlistCount === 1 ? "" : "s"}`}
-            className="text-foreground/80 hover:bg-muted hover:text-primary focus-visible:outline-ring relative flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+            className={iconButtonClass}
           >
             <Heart className="h-5 w-5" aria-hidden="true" />
-            {wishlistCount > 0 ? (
-              <span className="bg-primary text-primary-foreground absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold shadow-xs">
-                {wishlistCount}
-              </span>
-            ) : null}
+            <CountBadge count={wishlistCount} />
           </Link>
           <button
             type="button"
             onClick={() => dispatch(setCartDrawerOpen(true))}
             aria-label={`Cart, ${cartCount} item${cartCount === 1 ? "" : "s"}`}
-            className="text-foreground/80 hover:bg-muted hover:text-primary focus-visible:outline-ring relative flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+            className={cn(iconButtonClass, "-mr-2.5 lg:mr-0")}
           >
             <ShoppingBag className="h-5 w-5" aria-hidden="true" />
-            {cartCount > 0 ? (
-              <span className="bg-primary text-primary-foreground absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold shadow-xs">
-                {cartCount}
-              </span>
-            ) : null}
+            <CountBadge count={cartCount} />
           </button>
-          <Link
-            href={authStatus === "authenticated" ? "/account" : "/login"}
-            aria-label="Account"
-            className="text-foreground/80 hover:bg-muted hover:text-primary focus-visible:outline-ring flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            <User className="h-5 w-5" aria-hidden="true" />
-          </Link>
         </div>
       </div>
-      <MobileMenu />
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <MobileMenu categories={topLevelCategories} />
+      <SearchOverlay
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        categories={topLevelCategories}
+      />
     </header>
   );
 }

@@ -1,110 +1,126 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 import { Suspense } from "react";
 
-import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { serverFetch } from "@/lib/serverApi";
+import { GridSkeleton } from "@/components/product/ProductGrid";
+import { ItemListJsonLd } from "@/components/seo/ItemListJsonLd";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { getCategories, getOccasions, getProductFacets, topLevelCategories } from "@/lib/catalog";
+import { LISTING_CARD_SIZES } from "@/lib/imageSizes";
+import { preloadImage } from "@/lib/preloadImage";
+import { getProductPrimaryImage } from "@/lib/productImage";
+import { pageMetadata } from "@/lib/seo";
+import { serverFetch, serverFetchPage } from "@/lib/serverApi";
+import { hasListingParams } from "@/lib/validation/productFilters";
 import type { Category, Product } from "@/types";
 
 import { ProductListingClient } from "./ProductListingClient";
 
+type SearchParams = Record<string, string | string[] | undefined>;
+
 interface ProductsPageProps {
-  searchParams: Promise<{
-    category?: string;
-    occasion?: string;
-    q?: string;
-    search?: string;
-  }>;
+  searchParams: Promise<SearchParams>;
+}
+
+function first(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 export async function generateMetadata({ searchParams }: ProductsPageProps): Promise<Metadata> {
   const params = await searchParams;
-  const categorySlug = params.category;
-  const query = params.q || params.search;
-
-  if (categorySlug) {
-    const data = await serverFetch<{ category: Category }>(`/categories/${categorySlug}`);
-    if (data?.category) {
-      const cat = data.category;
-      const title = cat.seoTitle || `${cat.name} Sarees`;
-      const description =
-        cat.seoDescription ||
-        (cat.description
-          ? `${cat.description.slice(0, 155).trim()}`
-          : `Explore our collection of authentic ${cat.name} sarees at Saree Grace. Handcrafted by master weavers in Elampillai.`);
-
-      return {
-        title,
-        description,
-        alternates: { canonical: `/categories/${cat.slug}` },
-        openGraph: {
-          title: `${title} | Saree Grace`,
-          description,
-          url: `/categories/${cat.slug}`,
-          images: cat.image?.url ? [{ url: cat.image.url }] : undefined,
-        },
-      };
-    }
-  }
+  const query = first(params.q) || first(params.search);
+  const base = {
+    title: "Shop Sarees — Silk, Cotton & Handloom",
+    description:
+      "Browse the full Saree Grace collection: soft silks, silk cottons, Kalyani and Kerala cottons and bridal sarees, sourced directly from weavers in Elampillai.",
+    path: "/products",
+  };
 
   if (query) {
     return {
-      title: `Search results for "${query}"`,
-      description: `Browse matching sarees for "${query}" at Saree Grace. Handcrafted authentic Elampillai sarees.`,
+      ...pageMetadata({ ...base, title: `Search results for “${query}”` }),
+      // Internal search result pages shouldn't be indexed, but their links should be followed.
       robots: { index: false, follow: true },
     };
   }
 
-  return {
-    title: "Shop Sarees — Silk, Cotton & Festive Collections",
-    description:
-      "Browse our complete collection of authentic Elampillai sarees, soft silks, handloom cottons, and bridal sarees. Direct from weavers.",
-    alternates: { canonical: "/products" },
-    openGraph: {
-      type: "website",
-      title: "Shop Sarees — Saree Grace",
-      description:
-        "Browse our complete collection of authentic Elampillai sarees, soft silks, and handloom cottons.",
-      url: "/products",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: "Shop Sarees — Saree Grace",
-      description:
-        "Browse our complete collection of authentic Elampillai sarees, soft silks, and handloom cottons.",
-    },
-  };
+  // Filtered/sorted variants of the listing are the same content re-ordered or narrowed — keep
+  // them out of the index and point the canonical at the clean URL.
+  const hasFacets = hasListingParams(Object.keys(params));
+  return pageMetadata({ ...base, noindex: hasFacets });
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
-  if (params.category) {
-    redirect(`/categories/${params.category}`);
+  const categoryParam = first(params.category);
+  if (categoryParam) {
+    // Legacy `/products?category=<id|slug>` links → the category's canonical URL.
+    let slug = categoryParam;
+    try {
+      const data = await serverFetch<{ category: Category }>(`/categories/${categoryParam}`);
+      if (data?.category?.slug) slug = data.category.slug;
+    } catch {
+      // fall through with the raw param
+    }
+    permanentRedirect(`/categories/${encodeURIComponent(slug)}`);
   }
 
-  // Pre-fetch the first page of products on the server so crawlers receive genuine HTML links
-  const initialData = await serverFetch<{ products: Product[] }>("/products?limit=12");
-  const initialProducts = initialData?.products ?? [];
-
-  const breadcrumbs = [
-    { name: "Home", url: "/" },
-    { name: "Shop", url: "/products" },
-  ];
+  const query = first(params.q) || first(params.search);
+  const isDefaultView = !hasListingParams(Object.keys(params));
+  const [categories, occasions, facets, initialData] = await Promise.all([
+    getCategories(),
+    getOccasions(),
+    getProductFacets(),
+    // The server-rendered first page is only used for the unfiltered view.
+    isDefaultView
+      ? serverFetchPage<{ products: Product[] }>("/products?limit=12").catch(() => null)
+      : Promise.resolve(null),
+  ]);
+  const initialProducts = initialData?.data.products ?? [];
+  // The first card image is the LCP on phones — hint it in <head> (see lib/preloadImage.ts).
+  if (initialProducts[0]) {
+    preloadImage(getProductPrimaryImage(initialProducts[0])?.url, LISTING_CARD_SIZES);
+  }
 
   return (
-    <main className="flex-1 py-6">
-      <BreadcrumbJsonLd items={breadcrumbs} />
-      <h1 className="font-heading text-maroon-900 px-4 pb-4 text-2xl">Shop Sarees</h1>
+    <main className="flex-1">
+      <Breadcrumbs
+        className="container-page"
+        items={[
+          { name: "Home", url: "/" },
+          { name: "Shop", url: "/products" },
+        ]}
+      />
+      <ItemListJsonLd name="All sarees" products={initialProducts} />
+      <header className="container-page pt-2 pb-8 lg:pb-10">
+        <h1 className="text-heading-xl text-foreground">
+          {query ? <>Results for &ldquo;{query}&rdquo;</> : "All sarees"}
+        </h1>
+        {!query ? (
+          <p className="text-muted-foreground mt-3 max-w-2xl text-[15px] leading-relaxed">
+            Soft silks, silk cottons and handloom cottons — every saree sourced directly from weaver
+            families in Elampillai, Tamil Nadu.
+          </p>
+        ) : null}
+      </header>
+      {/* /products is rendered per request, so the live listing (which reads the URL) is already
+          in the server HTML — a skeleton fallback is enough here. Category pages are ISR and use
+          the static listing as their fallback instead. */}
       <Suspense
         fallback={
-          <div className="flex flex-col gap-4 px-4">
-            <Skeleton className="h-11 w-full" />
-            <Skeleton className="h-64 w-full" />
+          <div className="container-page">
+            <GridSkeleton />
           </div>
         }
       >
-        <ProductListingClient initialProducts={initialProducts} />
+        <ProductListingClient
+          initialProducts={initialProducts}
+          initialNextCursor={initialData ? initialData.nextCursor : undefined}
+          categories={topLevelCategories(categories)}
+          occasions={occasions}
+          initialFacets={facets}
+          showSearch
+        />
       </Suspense>
     </main>
   );

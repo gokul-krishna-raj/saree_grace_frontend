@@ -28,7 +28,8 @@ const useGetProductsQueryMock = jest.fn(
     isError: boolean;
     refetch: () => void;
   } => ({
-    data: arg.cursor === "cursor-1" ? page2 : page1,
+    // Like RTK Query: a skipped query (skipToken — not an object) has no data.
+    data: typeof arg !== "object" ? undefined : arg.cursor === "cursor-1" ? page2 : page1,
     isLoading: false,
     isFetching: false,
     isError: false,
@@ -108,5 +109,30 @@ describe("useInfiniteProducts", () => {
 
     expect(result.current.items.map((p) => p._id)).toContain("init1");
     expect(result.current.items.map((p) => p._id)).toContain("init2");
+  });
+
+  it("continues from a server-rendered first page without re-requesting it", () => {
+    useGetProductsQueryMock.mockClear();
+    const initial = [{ _id: "init1", name: "Soft Silk Saree" } as unknown as Product];
+    const { result } = renderHook(() =>
+      useInfiniteProducts({ sort: "newest" }, initial, "cursor-1"),
+    );
+
+    // First page came from the server: the list query is only ever skipped (skipToken).
+    expect(useGetProductsQueryMock.mock.calls.every(([arg]) => typeof arg !== "object")).toBe(true);
+    expect(result.current.items.map((p) => p._id)).toEqual(["init1"]);
+    expect(result.current.hasMore).toBe(true);
+
+    act(() => result.current.loadMore());
+    expect(useGetProductsQueryMock).toHaveBeenCalledWith(
+      expect.objectContaining({ cursor: "cursor-1" }),
+    );
+    expect(result.current.items.map((p) => p._id)).toEqual(["init1", "p2", "p3"]);
+  });
+
+  it("reports no more pages when the server page was the last one", () => {
+    const initial = [{ _id: "init1", name: "Soft Silk Saree" } as unknown as Product];
+    const { result } = renderHook(() => useInfiniteProducts({ sort: "newest" }, initial, null));
+    expect(result.current.hasMore).toBe(false);
   });
 });

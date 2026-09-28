@@ -1,18 +1,28 @@
 "use client";
 
-import { Heart } from "lucide-react";
+import { Heart, Plus, Star } from "lucide-react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { Badge } from "@/components/ui/Badge";
+import { useAddToCart } from "@/hooks/useAddToCart";
 import { useWishlistToggle } from "@/hooks/useWishlistToggle";
 import { cn } from "@/lib/cn";
 import { getColorCodeValue, isColorAttribute, isValidHexColor } from "@/lib/colorCode";
 import { getColorHex } from "@/lib/colors";
 import { formatPrice } from "@/lib/formatPrice";
 import { getProductPrimaryImage } from "@/lib/productImage";
+import { toast } from "@/lib/toast";
+import { useAppDispatch } from "@/store/hooks";
+import { setCartDrawerOpen } from "@/store/slices/uiSlice";
 import type { Product, ProductImage } from "@/types";
+
+// Quick view is only needed after an explicit click, so its code (variant selector, gallery,
+// cart controls) is split out of the listing bundle and fetched on demand.
+const QuickView = dynamic(() => import("./QuickView").then((mod) => mod.QuickView), {
+  ssr: false,
+});
 
 interface ColorOption {
   colorName: string;
@@ -64,10 +74,30 @@ function extractColorOptions(product: Product): ColorOption[] {
   return options;
 }
 
-export function ProductCard({ product }: { product: Product }) {
+const MAX_SWATCHES = 4;
+
+export function ProductCard({
+  product,
+  imageSizes = "(min-width: 1280px) 22vw, (min-width: 1024px) 30vw, (min-width: 640px) 45vw, 50vw",
+  preloadImage = false,
+  headingLevel: Heading = "h3",
+}: {
+  product: Product;
+  imageSizes?: string;
+  /** Only for the first row of an above-the-fold grid. */
+  preloadImage?: boolean;
+  /** `h2` when cards sit directly under the page's h1 (listing grid), `h3` inside a section. */
+  headingLevel?: "h2" | "h3";
+}) {
+  const dispatch = useAppDispatch();
   const { isWishlisted, toggle, isLoading } = useWishlistToggle(product._id);
+  const { addToCart, isLoading: isAdding } = useAddToCart();
   const colorOptions = useMemo(() => extractColorOptions(product), [product]);
   const [activeColor, setActiveColor] = useState<string | null>(null);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
+  // The hover image is only mounted after the first hover, so a grid of 12 cards doesn't
+  // download 24 images up front.
+  const [hoverImageArmed, setHoverImageArmed] = useState(false);
 
   const price = product.type === "simple" ? (product.price ?? 0) : product.startingPrice;
   // A variant product spans a price range across its active variants — show it as a range
@@ -92,85 +122,179 @@ export function ProductCard({ product }: { product: Product }) {
     : undefined;
   const displayedImage = selectedOption?.image ?? primaryImage;
 
+  // Second photo of the *same* colour only — swapping to a different colour on hover would
+  // misrepresent what the card is showing.
+  const hoverImage = useMemo(() => {
+    if (!displayedImage) return undefined;
+    const pool =
+      product.type === "variant"
+        ? (product.variants ?? [])
+            .filter((variant) => variant.images?.some((img) => img.url === displayedImage.url))
+            .flatMap((variant) => variant.images ?? [])
+        : (product.images ?? []);
+    return pool.find((img) => img.url !== displayedImage.url);
+  }, [product, displayedImage]);
+
   const outOfStock =
     product.type === "simple"
       ? (product.stock ?? 0) <= 0
       : !(product.variants ?? []).some((variant) => variant.isActive && variant.stock > 0);
 
+  const href = `/products/${product.slug}`;
+  const needsOptions = product.type === "variant";
+
+  async function handleQuickAdd() {
+    if (needsOptions) {
+      setQuickViewOpen(true);
+      return;
+    }
+    const added = await addToCart(product, undefined, 1);
+    if (added) {
+      toast.success(`${product.name} added to cart`);
+      dispatch(setCartDrawerOpen(true));
+    }
+  }
+
+  const visibleSwatches = colorOptions.slice(0, MAX_SWATCHES);
+
   return (
-    <div className="group border-border bg-card hover:shadow-elegant relative flex flex-col overflow-hidden rounded-xl border shadow-sm transition-all duration-500">
-      <Link
-        href={`/products/${product.slug}`}
-        aria-label={product.name}
-        className="bg-muted relative block aspect-[3/4] w-full overflow-hidden"
+    <article className="group/card relative flex flex-col">
+      <div
+        className="bg-muted relative aspect-[4/5] overflow-hidden rounded-md"
+        onPointerEnter={(event) => event.pointerType === "mouse" && setHoverImageArmed(true)}
       >
-        {displayedImage ? (
-          <Image
-            src={displayedImage.url}
-            alt={product.name}
-            fill
-            sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-          />
-        ) : null}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-        {outOfStock ? (
-          <span className="text-foreground bg-background/80 absolute inset-0 flex items-center justify-center text-xs font-medium backdrop-blur-xs sm:text-sm">
-            Out of stock
-          </span>
-        ) : null}
-        {hasDiscount ? (
-          <Badge
-            variant="destructive"
-            className="absolute top-2 left-2 text-[10px] font-semibold sm:top-2.5 sm:left-2.5 sm:text-xs"
-          >
-            {discountPercent}% off
-          </Badge>
-        ) : null}
-      </Link>
-      <button
-        type="button"
-        onClick={toggle}
-        disabled={isLoading}
-        aria-pressed={isWishlisted}
-        aria-label={
-          isWishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`
-        }
-        className="text-primary bg-card/90 absolute top-2 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full shadow-sm backdrop-blur-xs transition-transform hover:scale-110 active:scale-95 sm:top-2.5 sm:right-2.5 sm:h-10 sm:w-10"
-      >
-        <Heart
-          className={cn("h-4 w-4 sm:h-5 sm:w-5", isWishlisted && "fill-primary text-primary")}
-          aria-hidden="true"
-        />
-      </button>
-      <div className="flex flex-1 flex-col gap-1 p-3 sm:p-3.5">
-        {product.isHandloom ? (
-          <Badge variant="gold" className="w-fit text-[10px] sm:text-xs">
-            Handloom
-          </Badge>
-        ) : null}
-        <Link
-          href={`/products/${product.slug}`}
-          className="font-display text-foreground group-hover:text-primary line-clamp-2 text-xs leading-snug font-semibold transition-colors sm:text-sm md:text-base"
-        >
-          {product.name}
+        <Link href={href} tabIndex={-1} aria-hidden="true" className="absolute inset-0">
+          {displayedImage ? (
+            <Image
+              src={displayedImage.url}
+              alt={product.name}
+              fill
+              sizes={imageSizes}
+              // `preload` has no effect when this client component renders on the server, so
+              // above-the-fold cards ask for their image eagerly and at high priority instead.
+              loading={preloadImage ? "eager" : undefined}
+              fetchPriority={preloadImage ? "high" : undefined}
+              className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-[1.03]"
+            />
+          ) : (
+            <span className="font-display text-muted-foreground absolute inset-0 flex items-center justify-center text-sm">
+              Saree Grace
+            </span>
+          )}
+          {hoverImage && hoverImageArmed ? (
+            <Image
+              src={hoverImage.url}
+              alt=""
+              fill
+              sizes={imageSizes}
+              className="object-cover opacity-0 transition-opacity duration-500 group-hover/card:opacity-100"
+            />
+          ) : null}
         </Link>
+
+        <div className="pointer-events-none absolute top-2.5 left-2.5 flex flex-col items-start gap-1.5">
+          {outOfStock ? (
+            <span className="bg-card/95 text-foreground rounded-sm px-2 py-0.5 text-[11px] font-semibold tracking-wide">
+              Out of stock
+            </span>
+          ) : hasDiscount ? (
+            <span className="bg-sale rounded-sm px-2 py-0.5 text-[11px] font-semibold tracking-wide text-white">
+              {discountPercent}% off
+            </span>
+          ) : null}
+          {product.isHandloom ? (
+            <span className="bg-gold-50/95 text-maroon-900 rounded-sm px-2 py-0.5 text-[11px] font-semibold tracking-wide">
+              Handloom
+            </span>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          onClick={toggle}
+          disabled={isLoading}
+          aria-pressed={isWishlisted}
+          aria-label={
+            isWishlisted
+              ? `Remove ${product.name} from wishlist`
+              : `Add ${product.name} to wishlist`
+          }
+          className="text-foreground bg-card/90 hover:bg-card absolute top-2 right-2 z-10 flex h-10 w-10 items-center justify-center rounded-full transition-[transform,background-color] duration-200 active:scale-90"
+        >
+          <Heart
+            key={isWishlisted ? "on" : "off"}
+            className={cn(
+              "h-[18px] w-[18px]",
+              isWishlisted && "fill-primary text-primary animate-pop",
+            )}
+            aria-hidden="true"
+          />
+        </button>
+
+        {!outOfStock ? (
+          <>
+            {/* Desktop: full-width bar revealed on hover/focus */}
+            <button
+              type="button"
+              onClick={handleQuickAdd}
+              disabled={isAdding}
+              aria-label={`${needsOptions ? "Quick view" : "Quick add"}: ${product.name}`}
+              className="bg-card/95 text-foreground hover:bg-foreground hover:text-background absolute inset-x-2.5 bottom-2.5 z-10 hidden h-11 translate-y-2 items-center justify-center rounded-md text-[13px] font-medium tracking-wide opacity-0 transition-[opacity,transform,background-color,color] duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100 lg:flex"
+            >
+              {needsOptions ? "Quick view" : "Quick add"}
+            </button>
+            {/* Touch: compact always-visible button */}
+            <button
+              type="button"
+              onClick={handleQuickAdd}
+              disabled={isAdding}
+              aria-label={
+                needsOptions ? `Choose options for ${product.name}` : `Add ${product.name} to cart`
+              }
+              className="bg-card/95 text-foreground absolute right-2 bottom-2 z-10 flex h-10 w-10 items-center justify-center rounded-full active:scale-90 lg:hidden"
+            >
+              <Plus className="h-[18px] w-[18px]" aria-hidden="true" />
+            </button>
+          </>
+        ) : null}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-1.5 pt-3">
+        <Heading className="text-foreground line-clamp-2 text-sm leading-snug sm:text-[15px]">
+          <Link
+            href={href}
+            className="hover:text-primary transition-colors after:absolute after:inset-0 after:content-['']"
+          >
+            {product.name}
+          </Link>
+        </Heading>
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span className="text-primary text-xs font-bold tabular-nums sm:text-sm md:text-base">
+          <span className="text-foreground text-sm font-semibold tabular-nums sm:text-[15px]">
             {isPriceRange
               ? `${formatPrice(product.startingPrice)} – ${formatPrice(product.maxPrice)}`
               : `${product.type === "variant" ? "From " : ""}${formatPrice(price)}`}
           </span>
           {hasDiscount ? (
-            <span className="text-muted-foreground text-[10px] tabular-nums line-through sm:text-xs">
+            <span className="text-muted-foreground text-xs tabular-nums line-through">
               {formatPrice(compareAtPrice)}
             </span>
           ) : null}
         </div>
 
+        {product.reviewCount > 0 ? (
+          <p className="text-muted-foreground flex items-center gap-1 text-xs">
+            <Star className="fill-gold-500 text-gold-500 h-3.5 w-3.5" aria-hidden="true" />
+            <span className="text-foreground font-medium">{product.ratingAvg.toFixed(1)}</span>
+            <span>({product.reviewCount})</span>
+            <span className="sr-only">
+              Rated {product.ratingAvg.toFixed(1)} out of 5 from {product.reviewCount} reviews
+            </span>
+          </p>
+        ) : null}
+
         {colorOptions.length > 0 ? (
-          <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1.5">
-            {colorOptions.map((opt) => {
+          <div className="relative z-10 mt-0.5 flex flex-wrap items-center gap-0.5">
+            {visibleSwatches.map((opt) => {
               const isSelected = activeColor === opt.colorName;
               const swatchColor =
                 opt.colorCode ??
@@ -188,33 +312,37 @@ export function ProductCard({ product }: { product: Product }) {
                   aria-label={`Select ${opt.colorName}`}
                   aria-pressed={isSelected}
                   title={opt.colorName}
-                  className={cn(
-                    "relative flex h-4 w-4 items-center justify-center rounded-full transition-all sm:h-5 sm:w-5",
-                    isSelected
-                      ? "ring-primary scale-110 ring-2 ring-offset-1"
-                      : "border-border hover:border-primary border hover:scale-105",
-                  )}
+                  className="flex h-7 w-7 items-center justify-center rounded-full"
                 >
                   <span
                     aria-hidden="true"
-                    className="h-2.5 w-2.5 rounded-full border border-black/10 shadow-inner sm:h-3.5 sm:w-3.5"
+                    className={cn(
+                      "h-4 w-4 rounded-full border border-black/15 transition-shadow",
+                      isSelected && "ring-foreground ring-1 ring-offset-2",
+                    )}
                     style={{ backgroundColor: swatchColor ?? "#800000" }}
                   />
                 </button>
               );
             })}
-            {colorOptions.length > 1 ? (
-              <span className="text-muted-foreground text-[10px] font-normal sm:text-xs">
+            {colorOptions.length > MAX_SWATCHES ? (
+              <span className="text-muted-foreground ml-0.5 text-xs">
+                +{colorOptions.length - MAX_SWATCHES}
+              </span>
+            ) : colorOptions.length > 1 ? (
+              <span className="text-muted-foreground ml-1 text-xs">
                 {colorOptions.length} colors
               </span>
             ) : null}
           </div>
         ) : product.type === "variant" && product.variantCount > 1 ? (
-          <span className="text-muted-foreground mt-auto text-[10px] sm:text-xs">
-            {product.variantCount} options
-          </span>
+          <span className="text-muted-foreground text-xs">{product.variantCount} options</span>
         ) : null}
       </div>
-    </div>
+
+      {quickViewOpen ? (
+        <QuickView product={product} open={quickViewOpen} onClose={() => setQuickViewOpen(false)} />
+      ) : null}
+    </article>
   );
 }

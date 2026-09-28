@@ -40,11 +40,29 @@ describe("Header Component", () => {
   it("renders desktop navigation links", () => {
     render(<Header />);
 
-    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "Shop" })).toHaveAttribute("href", "/products");
+    expect(screen.getByRole("link", { name: "Shop All" })).toHaveAttribute("href", "/products");
+    // With no categories loaded, "Categories" falls back to a plain link to the index page.
     expect(screen.getByRole("link", { name: "Categories" })).toHaveAttribute("href", "/categories");
-    expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
+    expect(screen.getByRole("link", { name: "Our Story" })).toHaveAttribute("href", "/about");
     expect(screen.getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
+  });
+
+  it("renders a category mega-menu trigger when categories are provided", () => {
+    render(
+      <Header
+        categories={[
+          {
+            _id: "c1",
+            name: "Soft Silk Sarees",
+            slug: "soft-silk-sarees",
+            parentCategory: null,
+          } as never,
+        ]}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Categories" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
   it("displays cart and wishlist count badges", () => {

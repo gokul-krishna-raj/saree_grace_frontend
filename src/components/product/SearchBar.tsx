@@ -1,40 +1,55 @@
 "use client";
 
-import { Search } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Search, X } from "lucide-react";
+import { type FormEvent, useState } from "react";
 
-import { Input } from "@/components/ui/Input";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useProductFilters } from "@/hooks/useProductFilters";
 
+// In-page search on /products. Submits on Enter (one request per search) rather than on every
+// keystroke; instant suggestions live in the header's search dialog.
 export function SearchBar() {
   const { filters, updateFilters } = useProductFilters();
   const [value, setValue] = useState(filters.q ?? "");
-  const debounced = useDebouncedValue(value, 400);
-  const isFirstRun = useRef(true);
+  const [lastQ, setLastQ] = useState(filters.q);
 
-  useEffect(() => {
-    if (isFirstRun.current) {
-      isFirstRun.current = false;
-      return;
-    }
-    updateFilters({ q: debounced || undefined });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debounced]);
+  if (filters.q !== lastQ) {
+    setLastQ(filters.q);
+    setValue(filters.q ?? "");
+  }
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    updateFilters({ q: value.trim() || undefined });
+  }
 
   return (
-    <div className="relative px-4">
+    <form role="search" onSubmit={handleSubmit} className="relative w-full max-w-md">
       <Search
-        className="text-maroon-400 pointer-events-none absolute top-1/2 left-7 h-4 w-4 -translate-y-1/2"
+        className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2"
         aria-hidden="true"
       />
-      <Input
+      <input
+        type="search"
+        enterKeyHint="search"
         aria-label="Search sarees"
-        placeholder="Search sarees, fabric, colour..."
+        placeholder="Search sarees"
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        className="pl-10"
+        className="border-input bg-card placeholder:text-muted-foreground focus-visible:ring-ring h-11 w-full rounded-md border pr-10 pl-10 text-base focus-visible:ring-2 focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
       />
-    </div>
+      {value ? (
+        <button
+          type="button"
+          onClick={() => {
+            setValue("");
+            updateFilters({ q: undefined });
+          }}
+          aria-label="Clear search"
+          className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1 flex h-9 w-9 -translate-y-1/2 items-center justify-center"
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
+      ) : null}
+    </form>
   );
 }

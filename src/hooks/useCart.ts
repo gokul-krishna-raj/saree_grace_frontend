@@ -2,6 +2,7 @@ import type { SerializedError } from "@reduxjs/toolkit";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import { useMemo } from "react";
 
+import { useHydrated } from "@/hooks/useHydrated";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { toast } from "@/lib/toast";
 import {
@@ -22,11 +23,6 @@ export interface CartLine {
   qty: number;
 }
 
-// Matches the backend's own shipping rule exactly (order.service.ts) so the cart page's
-// preview total matches what checkout will actually charge.
-const FREE_SHIPPING_THRESHOLD = 999;
-const SHIPPING_FEE = 99;
-
 // One hook, consumed by both CartDrawer and the full cart page, so a qty change made in either
 // place is immediately reflected in the other — they render the same underlying RTK Query
 // cache (authenticated) or Redux slice (guest), never a locally-duplicated copy.
@@ -41,6 +37,13 @@ export function useCart() {
   const isAuthPending = authStatus === "checking";
   const dispatch = useAppDispatch();
   const guestItems = useAppSelector((state) => state.guestCart.items);
+  // The guest cart is restored from localStorage after mount (see StoreProvider) — until then an
+  // empty list means "not read yet", not "empty cart".
+  const hydrated = useHydrated();
+  const guestCartNotRehydrated = useAppSelector(
+    (state) => state.guestCart._persist?.rehydrated === false,
+  );
+  const isGuestCartRestoring = !isAuthenticated && (!hydrated || guestCartNotRehydrated);
   const {
     data: serverCart,
     isLoading,
@@ -78,9 +81,11 @@ export function useCart() {
   }, [isAuthPending, isAuthenticated, serverCart, guestItems]);
 
   const itemsTotal = lines.reduce((sum, line) => sum + line.price * line.qty, 0);
-  const shippingFee =
-    lines.length === 0 || itemsTotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
-  const total = itemsTotal + shippingFee;
+  // Shipping depends on the delivery state (backend `computeShippingFee`, mirrored in
+  // lib/shippingFee.ts), which isn't known until checkout — the cart used to show a made-up
+  // "free over ₹999, else ₹99" rule the backend never applied. `null` = calculated at checkout.
+  const shippingFee = null;
+  const total = itemsTotal;
 
   async function updateQty(line: CartLine, qty: number) {
     if (isAuthPending) return;
@@ -122,10 +127,10 @@ export function useCart() {
     itemsTotal,
     shippingFee,
     total,
-    isLoading: isAuthPending || (isAuthenticated && isLoading),
+    isLoading: isAuthPending || isGuestCartRestoring || (isAuthenticated && isLoading),
     isFetching,
     isError: hasLoadError,
-    isEmpty: !isAuthPending && !hasLoadError && lines.length === 0,
+    isEmpty: !isAuthPending && !isGuestCartRestoring && !hasLoadError && lines.length === 0,
     isAuthenticated,
     updateQty,
     removeItem,

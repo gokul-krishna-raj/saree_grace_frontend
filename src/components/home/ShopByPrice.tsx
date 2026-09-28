@@ -10,9 +10,9 @@ interface PriceRange {
 
 const PRICE_RANGES: PriceRange[] = [
   { label: `Under ${formatPrice(999)}`, maxPrice: 999 },
-  { label: `${formatPrice(999)} - ${formatPrice(1999)}`, minPrice: 999, maxPrice: 1999 },
-  { label: `${formatPrice(1999)} - ${formatPrice(2999)}`, minPrice: 1999, maxPrice: 2999 },
-  { label: `${formatPrice(2999)} - ${formatPrice(4999)}`, minPrice: 2999, maxPrice: 4999 },
+  { label: `${formatPrice(999)} – ${formatPrice(1999)}`, minPrice: 999, maxPrice: 1999 },
+  { label: `${formatPrice(1999)} – ${formatPrice(2999)}`, minPrice: 1999, maxPrice: 2999 },
+  { label: `${formatPrice(2999)} – ${formatPrice(4999)}`, minPrice: 2999, maxPrice: 4999 },
   { label: `Above ${formatPrice(4999)}`, minPrice: 4999 },
 ];
 
@@ -25,18 +25,23 @@ function buildHref({ minPrice, maxPrice }: PriceRange): string {
 
 export function ShopByPrice() {
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-10">
-      <h2 className="font-display text-foreground text-2xl font-bold sm:text-3xl">Shop by Price</h2>
-      <div className="scrollbar-hide flex gap-4 overflow-x-auto pb-1">
-        {PRICE_RANGES.map((range) => (
-          <Link
-            key={range.label}
-            href={buildHref(range)}
-            className="border-border hover:border-primary hover:text-primary bg-card text-foreground flex w-36 shrink-0 items-center justify-center rounded-xl border px-4 py-6 text-center text-sm font-medium shadow-xs transition-all hover:shadow-md"
-          >
-            {range.label}
-          </Link>
-        ))}
+    <section aria-labelledby="shop-by-price" className="container-page section-y">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:gap-10">
+        <h2 id="shop-by-price" className="text-heading-lg text-foreground shrink-0">
+          Shop by price
+        </h2>
+        <ul className="scrollbar-hide -mx-4 flex gap-2.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+          {PRICE_RANGES.map((range) => (
+            <li key={range.label} className="shrink-0">
+              <Link
+                href={buildHref(range)}
+                className="border-border text-foreground hover:border-foreground hover:bg-foreground hover:text-background inline-flex h-11 items-center rounded-full border px-5 text-sm tabular-nums transition-colors"
+              >
+                {range.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

@@ -4,21 +4,20 @@ import { type HTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 export const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-sm border px-2 py-0.5 text-[11px] font-semibold tracking-wide transition-colors",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        maroon: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        danger:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "border-border text-foreground",
-        gold: "border-gold/40 bg-gold-100 text-maroon-900 font-semibold shadow-xs",
+        default: "border-transparent bg-primary text-primary-foreground",
+        maroon: "border-transparent bg-primary text-primary-foreground",
+        secondary: "border-transparent bg-secondary text-secondary-foreground",
+        destructive: "border-transparent bg-sale text-white",
+        danger: "border-transparent bg-sale text-white",
+        sale: "border-transparent bg-sale text-white",
+        outline: "border-border bg-card text-foreground",
+        gold: "border-gold-200 bg-gold-50 text-maroon-900",
         royal: "border-transparent bg-royal text-primary-foreground",
+        neutral: "border-transparent bg-card/95 text-foreground",
       },
     },
     defaultVariants: { variant: "default" },

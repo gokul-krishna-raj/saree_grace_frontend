@@ -63,3 +63,33 @@ describe("ProductDescription", () => {
     expect(container.textContent).toContain("Safe text");
   });
 });
+
+describe("ProductDescription — Markdown descriptions", () => {
+  it("renders Markdown headings, bold text and bullet lists as formatted HTML", () => {
+    const md =
+      "## Checked Kalyani Saree\n\nA **grand zari pallu** saree.\n\n* **Fabric:** Cotton\n* **Length:** 6.30 metres";
+    const { container } = render(<ProductDescription description={md} />);
+
+    expect(container.querySelector("h3")).toHaveTextContent("Checked Kalyani Saree");
+    expect(container.querySelector("strong")).toHaveTextContent("grand zari pallu");
+    expect(container.querySelectorAll("li")).toHaveLength(2);
+    expect(container.textContent).not.toContain("**");
+    expect(container.textContent).not.toContain("##");
+  });
+
+  it("escapes raw markup inside Markdown instead of rendering it", () => {
+    const md = "## Title\n\n**Bold** <img src=x onerror=alert(1)>";
+    const { container } = render(<ProductDescription description={md} />);
+    expect(container.querySelector("img")).not.toBeInTheDocument();
+  });
+});
+
+describe("ProductDescription — Markdown heading levels", () => {
+  it("maps the shallowest heading to h3 so a description starting at ### doesn't skip levels", () => {
+    const { container } = render(
+      <ProductDescription description={"### Highlights\n\nText\n\n#### Care\n\nMore"} />,
+    );
+    expect(container.querySelector("h3")).toHaveTextContent("Highlights");
+    expect(container.querySelector("h4")).toHaveTextContent("Care");
+  });
+});

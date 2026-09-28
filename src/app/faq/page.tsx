@@ -1,19 +1,15 @@
 import type { Metadata } from "next";
 
+import { JsonLd } from "@/components/seo/JsonLd";
 import { env } from "@/lib/env";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Frequently Asked Questions",
   description:
-    "Answers to common questions about ordering, payment, shipping, and returns at Saree Grace.",
-  alternates: { canonical: "/faq" },
-  openGraph: {
-    title: "Frequently Asked Questions | Saree Grace",
-    description:
-      "Answers to common questions about ordering, payment, shipping, and returns at Saree Grace.",
-    url: "/faq",
-  },
-};
+    "Answers to common questions about Saree Grace: what makes our Elampillai sarees different, ordering, payment methods, order tracking, shipping and returns.",
+  path: "/faq",
+});
 
 const FAQS: Array<{ question: string; answer: string }> = [
   {
@@ -68,10 +64,7 @@ export default function FaqPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-10">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
+      <JsonLd data={faqSchema} />
       <h1 className="font-heading text-maroon-900 text-3xl">Frequently Asked Questions</h1>
       <p className="text-maroon-700 leading-relaxed">
         Everything you need to know about shopping for sarees online with Saree Grace.

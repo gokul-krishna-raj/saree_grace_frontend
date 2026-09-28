@@ -34,24 +34,27 @@ export function CheckboxGroup({
 
   return (
     <fieldset className={cn("flex flex-col gap-2", className)}>
-      {label ? <legend className="text-maroon-900 text-sm font-medium">{label}</legend> : null}
-      <div className="flex flex-wrap gap-3">
+      {label ? <legend className="text-foreground text-sm font-medium">{label}</legend> : null}
+      <div className="flex flex-col gap-0">
         {options.map((option) => (
-          <label key={option.value} className="text-maroon-800 flex items-center gap-2 text-sm">
+          <label
+            key={option.value}
+            className="text-foreground flex min-h-11 cursor-pointer items-center gap-2.5 text-sm"
+          >
             <input
               type="checkbox"
               checked={value.includes(option.value)}
               disabled={disabled}
               onChange={() => toggle(option.value)}
               aria-invalid={error ? true : undefined}
-              className="border-maroon-200 text-maroon-700 focus-visible:outline-maroon-600 h-5 w-5 rounded focus-visible:outline-2"
+              className="accent-primary h-4.5 w-4.5 rounded-sm"
             />
             {option.label}
           </label>
         ))}
       </div>
       {error ? (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-destructive text-sm">
           {error}
         </p>
       ) : null}

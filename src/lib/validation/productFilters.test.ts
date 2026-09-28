@@ -1,4 +1,11 @@
-import { filtersToSearchParams, parseProductFilters, toApiFilters } from "./productFilters";
+import {
+  filtersToSearchParams,
+  hasListingParams,
+  parseProductFilters,
+  splitFilterList,
+  toApiFilters,
+  toggleFilterListValue,
+} from "./productFilters";
 
 describe("productFilters URL round-trip", () => {
   it("parses a full filter combination from the URL", () => {
@@ -84,5 +91,21 @@ describe("productFilters URL round-trip", () => {
   it("joins selected occasions into a single comma-separated string for the products API", () => {
     const parsed = parseProductFilters(new URLSearchParams("occasion=occ1,occ2"));
     expect(toApiFilters(parsed).occasion).toBe("occ1,occ2");
+  });
+});
+
+describe("colour/fabric filter lists and listing params", () => {
+  it("toggles values in a comma-separated, case-insensitive list", () => {
+    expect(toggleFilterListValue(undefined, "Rama Green")).toBe("rama green");
+    expect(toggleFilterListValue("rama green", "Pink")).toBe("rama green,pink");
+    expect(toggleFilterListValue("rama green,pink", "RAMA GREEN")).toBe("pink");
+    expect(toggleFilterListValue("pink", "pink")).toBeUndefined();
+    expect(splitFilterList(" Blue , ,pink ")).toEqual(["blue", "pink"]);
+  });
+
+  it("treats tracking params as noise but real filters as listing params", () => {
+    expect(hasListingParams(["utm_source", "gclid", "fbclid"])).toBe(false);
+    expect(hasListingParams(["utm_source", "sort"])).toBe(true);
+    expect(hasListingParams(new URLSearchParams("search=silk").keys())).toBe(true);
   });
 });

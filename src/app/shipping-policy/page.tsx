@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 
 import { env } from "@/lib/env";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Shipping Policy",
-  description: "Shipping timelines, charges, and delivery areas for Saree Grace orders.",
-  alternates: { canonical: "/shipping-policy" },
-  openGraph: {
-    title: "Shipping Policy | Saree Grace",
-    description: "Shipping timelines, charges, and delivery areas for Saree Grace orders.",
-    url: "/shipping-policy",
-  },
-};
+  description:
+    "Saree Grace orders ship from Elampillai, Salem within 1–2 business days and usually arrive in 3–7 business days across India. Charges are shown at checkout.",
+  path: "/shipping-policy",
+});
 
 export default function ShippingPolicyPage() {
   return (

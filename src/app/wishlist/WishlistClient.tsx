@@ -44,7 +44,7 @@ export function WishlistClient() {
       <main className="px-3 py-8 sm:px-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="aspect-[3/4] w-full" />
+            <Skeleton key={index} className="aspect-[4/5] w-full" />
           ))}
         </div>
       </main>
@@ -55,6 +55,7 @@ export function WishlistClient() {
     return (
       <main className="flex flex-1 flex-col">
         <ErrorState
+          headingAs="h1"
           title="Couldn't load your wishlist"
           message="Check your connection and try again."
           onRetry={refetch}

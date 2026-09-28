@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-// Runs against the real backend (BACKEND_CONTRACT.md), not mocks — assumes the seed data from
-// `npm run seed` exists (specifically "handloom-cotton-saree-blue", a simple product). Payment
+// Runs against a real backend (BACKEND_CONTRACT.md), not mocks — assumes the seed data from
+// `npm run seed` exists (the simple product "cotton-saree-blue" and the pre-verified test
+// customer). NEVER point this at the production database: it creates orders and accounts.
+// See NOTES.md ("Running E2E safely") for the local, sandboxed setup. Payment
 // itself can't be completed without real Razorpay test-mode credentials (flagged repeatedly —
 // see NOTES.md Section 10/17) — these tests stop at the actual boundary of what's testable
 // rather than faking a payment success.
@@ -20,7 +22,7 @@ test.describe("guest browse → filter → product detail → cart → checkout 
     page,
   }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: /handloom sarees/i })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /woven by hand/i })).toBeVisible();
 
     await page.getByRole("link", { name: "Shop the collection" }).click();
     await expect(page).toHaveURL(/\/products/);
@@ -28,38 +30,37 @@ test.describe("guest browse → filter → product detail → cart → checkout 
     // drawer-trigger) is actually visible — right after navigation the "Filters" trigger can
     // still report visible for an instant pre-stylesheet, which would misdetect desktop as
     // mobile below.
-    await expect(page.getByPlaceholder(/search/i)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "All sarees" })).toBeVisible();
 
-    // On narrow viewports (mobile-chrome project) the filters live behind a "Filters" bottom-
+    // On narrow viewports (mobile-chrome project) the filters live behind a "Filter" bottom-
     // sheet trigger (FilterDrawer.tsx) instead of the always-visible desktop sidebar
-    // (FilterPanel.tsx) — open it first so "Handloom only" is actually there to click. Once
+    // (FilterPanel.tsx) — open it first so "In stock only" is actually there to click. Once
     // open, the SAME FilterPanel is mounted twice (the desktop <aside>, hidden but still in the
     // DOM via CSS, plus the drawer's copy), so the locator must be scoped to the dialog or it's
     // ambiguous.
-    // exact: true — otherwise this substring-matches FilterPanel's own "Clear filters" button
-    // too (always present in the DOM, CSS-hidden below `lg` inside the desktop <aside>, per
-    // ProductListingClient.tsx), which is visible on desktop and would misdetect it as mobile.
-    const filtersTrigger = page.getByRole("button", { name: "Filters", exact: true });
+    const filtersTrigger = page.getByRole("button", { name: "Filter", exact: true });
     const isMobileLayout = await filtersTrigger.isVisible();
     if (isMobileLayout) await filtersTrigger.click();
-    const filterScope = isMobileLayout ? page.getByRole("dialog", { name: "Filters" }) : page;
+    const filterScope = isMobileLayout ? page.getByRole("dialog", { name: "Filter" }) : page;
 
     // .click(), not .check() — the checkbox's `checked` state is fully derived from the URL
     // (Section 6: URL is the source of truth for filters), which updates asynchronously via a
     // Next.js navigation. `.check()`'s own strict immediate-state assertion is a real but
     // test-side timing mismatch with that pattern, not a product bug — the subsequent URL
     // assertion below is what actually needs to wait, and does.
-    await filterScope.getByLabel("Handloom only").click();
-    await expect(page).toHaveURL(/handloomOnly=true/);
-    // Every seeded product is handloom, so filtering shouldn't empty the results.
+    await filterScope.getByLabel("In stock only").first().click();
+    await expect(page).toHaveURL(/inStock=true/);
+    // Seeded products are in stock, so filtering shouldn't empty the results.
     await expect(page.getByText("No sarees match these filters")).not.toBeVisible();
 
-    await page.goto("/products/handloom-cotton-saree-blue");
-    await expect(page.getByRole("heading", { name: "Handloom Cotton Saree - Blue" })).toBeVisible();
+    await page.goto("/products/cotton-saree-blue");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Cotton Saree - Blue" }),
+    ).toBeVisible();
 
-    await page.getByRole("button", { name: "Add to cart" }).click();
-    await expect(page.getByRole("dialog", { name: "Your cart" })).toBeVisible();
-    await page.getByRole("link", { name: "View full cart" }).click();
+    await page.getByRole("button", { name: "Add to cart", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: /Your cart/ })).toBeVisible();
+    await page.getByRole("link", { name: "View cart" }).click();
     await expect(page).toHaveURL("/cart");
 
     await page.getByRole("button", { name: "Proceed to checkout" }).click();
@@ -70,21 +71,35 @@ test.describe("guest browse → filter → product detail → cart → checkout 
   });
 });
 
-test.describe("registered user: add to cart → checkout form → order creation", () => {
-  test("registers, adds a real product to the cart, and creates a real order", async ({ page }) => {
-    const email = `e2e-${Date.now()}@example.com`;
+// Seeded, pre-verified customer from saree_grace_backend/scripts/seed.ts (test-only account).
+const SEED_CUSTOMER = { email: "customer@example.com", password: "Customer123!" };
 
+test.describe("registration → email verification", () => {
+  test("new sign-ups are sent to OTP verification, not straight into the store", async ({
+    page,
+  }) => {
+    const email = `e2e-${Date.now()}-${test.info().project.name}@example.com`;
     await page.goto("/register");
     await page.getByLabel("Full name").fill("E2E Test User");
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password", { exact: true }).fill("E2ETestPass123!");
     await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page).toHaveURL(new RegExp(`/verify-otp\\?email=${encodeURIComponent(email)}`));
+  });
+});
+
+test.describe("signed-in customer: add to cart → checkout form → order creation", () => {
+  test("adds a real product to the server cart and creates a real order", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(SEED_CUSTOMER.email);
+    await page.getByLabel("Password", { exact: true }).fill(SEED_CUSTOMER.password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page).toHaveURL("/");
 
-    await page.goto("/products/handloom-cotton-saree-blue");
-    await page.getByRole("button", { name: "Add to cart" }).click();
-    await expect(page.getByRole("dialog", { name: "Your cart" })).toBeVisible();
-    await page.getByRole("link", { name: "View full cart" }).click();
+    await page.goto("/products/cotton-saree-blue");
+    await page.getByRole("button", { name: "Add to cart", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: /Your cart/ })).toBeVisible();
+    await page.getByRole("link", { name: "View cart" }).click();
 
     await page.getByRole("button", { name: "Proceed to checkout" }).click();
     await expect(page).toHaveURL("/checkout");
@@ -93,8 +108,10 @@ test.describe("registered user: add to cart → checkout form → order creation
     await page.getByLabel("Phone").fill("9876543210");
     await page.getByLabel("Address line 1").fill("123 Test Street");
     await page.getByLabel("City").fill("Chennai");
-    await page.getByLabel("State").fill("Tamil Nadu");
+    await page.getByLabel("State").selectOption("Tamil Nadu");
     await page.getByLabel("Postal code").fill("600001");
+    // Shipping is computed from the state (lib/shippingFee.ts mirrors the backend).
+    await expect(page.getByText("₹40")).toBeVisible();
 
     await page.getByRole("button", { name: "Place order & pay" }).click();
 

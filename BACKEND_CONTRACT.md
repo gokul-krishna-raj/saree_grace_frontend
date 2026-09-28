@@ -55,6 +55,16 @@ model — see "Missing endpoints" below.
   `product.validation.ts` (`category: objectId.optional()`) and `product.service.ts` (assigns
   the raw query value straight into a Mongo filter against the `category` ref field, which
   would silently match nothing for a slug string).
+  - `color` / `fabric`: comma-separated, case-insensitive exact values ("blue,rama green"),
+    matched against **active variants' attributes** (and the product-level field). Use values
+    from `/products/facets`.
+  - `price_asc` / `price_desc` sort by the persisted `sortPrice` (lowest active variant price,
+    or the simple product's price); `top_rated` by `ratingAvg`. These sorts page with an opaque
+    keyset cursor — always pass back `meta.nextCursor` unchanged; an `_id`-only cursor is a 400.
+- `GET /products/facets?category&occasion&fabric&color&minPrice&maxPrice&handloomOnly&inStockOnly`
+  → `{colors: [{value,label,count,hex?}], fabrics: [...]}` — the colour/fabric values that exist
+  on active products for the current filters, with product counts. Each dimension ignores its own
+  selection (picking a colour doesn't hide the other colours).
 - `GET /products/search?q=<required>&cursor&limit` → same shape (Mongo `$text` search)
 - `GET /products/:slug` → `{product}` (404 if inactive/missing)
 - `GET /products/:id/reviews?cursor&limit` → `{reviews}` (approved only)

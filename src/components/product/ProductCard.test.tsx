@@ -1,6 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render as rtlRender, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement } from "react";
+import { Provider } from "react-redux";
 
+import { makeStore } from "@/store";
 import type { Product } from "@/types";
 
 const toggleMock = jest.fn();
@@ -15,6 +18,11 @@ jest.mock("@/hooks/useWishlistToggle", () => ({
 }));
 
 import { ProductCard } from "./ProductCard";
+
+// ProductCard reads the store for quick add (useAddToCart) — render inside a real store.
+function render(ui: ReactElement) {
+  return rtlRender(<Provider store={makeStore()}>{ui}</Provider>);
+}
 
 const simpleProduct: Product = {
   _id: "p1",

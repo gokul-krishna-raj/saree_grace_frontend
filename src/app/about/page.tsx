@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
   title: "Our Story — Authentic Elampillai Weavers",
   description:
     "Learn how Saree Grace partners directly with traditional weaver families in Elampillai, Salem to deliver authentic cotton and silk sarees.",
-  alternates: { canonical: "/about" },
-  openGraph: {
-    title: "Our Story — Saree Grace",
-    description:
-      "Learn how Saree Grace partners directly with traditional weaver families in Elampillai, Salem to deliver authentic cotton and silk sarees.",
-    url: "/about",
-  },
-};
+  path: "/about",
+  image: "/images/hero/slide_2.webp",
+  imageAlt: "A weaver working at a traditional wooden handloom in Elampillai",
+});
 
 export default function AboutPage() {
   return (

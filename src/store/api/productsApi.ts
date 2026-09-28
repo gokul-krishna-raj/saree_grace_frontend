@@ -1,6 +1,6 @@
 import { buildFormData, buildProductFormData } from "@/lib/formData";
 import { baseApi } from "@/store/api/baseApi";
-import type { ApiSuccess, Product, ProductSort, ProductType } from "@/types";
+import type { ApiSuccess, Product, ProductFacets, ProductSort, ProductType } from "@/types";
 
 export interface ProductListFilters {
   cursor?: string;
@@ -171,6 +171,14 @@ export const productsApi = baseApi.injectEndpoints({
     }),
     // Ranked list, not a cursor page — the backend already orders by sales, so this is returned
     // and rendered as-is, with no client-side re-sort and no "load more".
+    getProductFacets: builder.query<
+      ProductFacets,
+      Omit<ProductListFilters, "cursor" | "limit" | "sort">
+    >({
+      query: (filters) => `/products/facets${toQueryString({ ...filters })}`,
+      transformResponse: (response: ApiSuccess<ProductFacets>) => response.data,
+      providesTags: [{ type: "Product", id: "LIST" }],
+    }),
     getBestSellingProducts: builder.query<Product[], { limit?: number } | void>({
       query: (arg) =>
         `/products/best-sellers${toQueryString({ limit: arg?.limit ?? DEFAULT_BEST_SELLERS_LIMIT })}`,
@@ -273,6 +281,7 @@ export const {
   useSearchProductsQuery,
   useGetProductBySlugQuery,
   useGetBestSellingProductsQuery,
+  useGetProductFacetsQuery,
   useCreateSimpleProductMutation,
   useCreateVariantShellProductMutation,
   useCreateVariantProductMutation,

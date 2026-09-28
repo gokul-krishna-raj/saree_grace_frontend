@@ -46,6 +46,7 @@ function OrderHistoryContent() {
   if (isError && orders.length === 0) {
     return (
       <ErrorState
+        headingAs="h1"
         title="Couldn't load your orders"
         message="Check your connection and try again."
         onRetry={refetch}

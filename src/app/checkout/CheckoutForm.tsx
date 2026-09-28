@@ -23,7 +23,7 @@ import { type AddressFormValues, addressSchema } from "@/lib/validation/checkout
 import { useCreateOrderMutation } from "@/store/api/ordersApi";
 
 export function CheckoutForm() {
-  const { lines, itemsTotal, shippingFee: estimatedShippingFee, isEmpty } = useCart();
+  const { lines, itemsTotal, isEmpty } = useCart();
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const { payForOrder, isProcessing } = useRazorpayCheckout();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,12 +39,11 @@ export function CheckoutForm() {
     defaultValues: { country: "India" },
   });
 
-  // Shipping is state-tiered (order.service.ts on the backend) but the state is only known once
-  // the shopper picks it here — before that, fall back to the cart's flat/free estimate so the
-  // summary isn't blank on first render.
+  // Shipping is state-tiered (order.service.ts on the backend) and only known once the shopper
+  // picks a state here — until then the summary says so instead of guessing a number.
   const selectedState = watch("state");
-  const shippingFee = selectedState ? getShippingFeeForState(selectedState) : estimatedShippingFee;
-  const total = itemsTotal + shippingFee;
+  const shippingFee = selectedState ? getShippingFeeForState(selectedState) : null;
+  const total = itemsTotal + (shippingFee ?? 0);
 
   if (isProcessing) {
     return (
@@ -181,7 +180,12 @@ export function CheckoutForm() {
               </li>
             ))}
           </ul>
-          <CartSummary itemsTotal={itemsTotal} shippingFee={shippingFee} total={total} />
+          <CartSummary
+            itemsTotal={itemsTotal}
+            shippingFee={shippingFee}
+            total={total}
+            shippingPendingLabel="Select your state"
+          />
         </section>
 
         {submitError ? (

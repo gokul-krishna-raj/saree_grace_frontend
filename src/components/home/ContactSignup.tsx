@@ -9,36 +9,32 @@ export function ContactSignup() {
   const href = whatsappNumber
     ? `https://wa.me/${whatsappNumber}`
     : `mailto:${env.NEXT_PUBLIC_CONTACT_EMAIL}`;
-  const label = whatsappNumber ? "Message us on WhatsApp" : "Email us for updates";
+  const label = whatsappNumber ? "Message us on WhatsApp" : "Email us";
 
   return (
-    <section className="mx-auto max-w-4xl px-4 py-12">
-      <div className="bg-gradient-maroon text-primary-foreground border-gold/30 shadow-elegant relative overflow-hidden rounded-2xl border px-6 py-12 text-center sm:px-12 sm:py-16">
-        <div className="bg-pattern-indian absolute inset-0 opacity-10" aria-hidden="true" />
-        <div className="relative z-10 flex flex-col items-center">
-          <span className="border-gold/30 bg-accent/20 text-gold-light mb-3 inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-wider uppercase">
-            Exclusive Updates
-          </span>
-          <h2 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Stay in the loop
-          </h2>
-          <p className="text-primary-foreground/85 mt-3 max-w-md text-sm leading-relaxed sm:text-base">
-            Be the first to know about new handloom arrivals, festive bridal collections, and master
-            weaver stories.
-          </p>
-          <a
-            href={href}
-            target={whatsappNumber ? "_blank" : undefined}
-            rel={whatsappNumber ? "noopener noreferrer" : undefined}
-            className={cn(
-              buttonVariants({ variant: "gold", size: "lg" }),
-              "mt-8 inline-flex items-center gap-2",
-            )}
-          >
-            <MessageCircle className="h-5 w-5" aria-hidden="true" />
-            {label}
-          </a>
-        </div>
+    <section
+      aria-labelledby="contact-cta"
+      className="bg-primary text-primary-foreground relative overflow-hidden"
+    >
+      <div className="bg-pattern-indian absolute inset-0" aria-hidden="true" />
+      <div className="container-page relative flex flex-col items-center py-16 text-center lg:py-24">
+        <p className="eyebrow !text-gold-200 mb-4">Personal shopping</p>
+        <h2 id="contact-cta" className="text-heading-xl max-w-2xl">
+          Not sure which saree is right for the occasion?
+        </h2>
+        <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-white/80 sm:text-base">
+          Tell us what you&apos;re looking for — colour, fabric, budget — and we&apos;ll help you
+          choose. We&apos;re also the first to share new handloom arrivals.
+        </p>
+        <a
+          href={href}
+          target={whatsappNumber ? "_blank" : undefined}
+          rel={whatsappNumber ? "noopener noreferrer" : undefined}
+          className={cn(buttonVariants({ variant: "light", size: "lg" }), "mt-8")}
+        >
+          <MessageCircle aria-hidden="true" />
+          {label}
+        </a>
       </div>
     </section>
   );

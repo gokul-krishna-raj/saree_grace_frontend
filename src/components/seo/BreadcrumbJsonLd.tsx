@@ -1,3 +1,4 @@
+import { JsonLd } from "@/components/seo/JsonLd";
 import { env } from "@/lib/env";
 
 export interface BreadcrumbItem {
@@ -25,10 +26,5 @@ export function BreadcrumbJsonLd({ items }: BreadcrumbJsonLdProps) {
     })),
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-    />
-  );
+  return <JsonLd data={structuredData} />;
 }

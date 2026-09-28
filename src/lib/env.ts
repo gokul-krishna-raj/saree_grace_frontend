@@ -1,44 +1,48 @@
-import { z } from "zod";
+// Public (NEXT_PUBLIC_*) config. Everything here ends up in the browser bundle — never put a
+// secret in this file.
+//
+// Deliberately validated by hand rather than with zod: this module is imported by client code
+// (baseApi, analytics), and pulling zod in just to check a handful of strings added a ~64 KB
+// (gzipped) chunk to every page.
 
-const envSchema = z.object({
-  NEXT_PUBLIC_API_BASE_URL: z.string().url(),
-  NEXT_PUBLIC_GOOGLE_CLIENT_ID: z.string().optional().default(""),
-  NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().optional().default(""),
-  NEXT_PUBLIC_GA_MEASUREMENT_ID: z.string().optional().default(""),
-  // Not in saree-grace-frontend-packages.md's original env list — added for the footer/home
-  // WhatsApp contact link (Section 5). Optional: no real business number has been provisioned
-  // yet, so the link is hidden rather than pointing at a fabricated one — see NOTES.md. Also
-  // doubles as the footer's "Call us" phone number — one real number, two contact channels.
-  NEXT_PUBLIC_WHATSAPP_NUMBER: z.string().optional().default(""),
-  // Single source of truth for the support address shown in the footer, contact page, and
-  // WhatsApp-signup fallback — was previously the literal string "hello@sareegrace.com"
-  // duplicated in three files.
-  NEXT_PUBLIC_CONTACT_EMAIL: z.string().optional().default("sareesgrace@gmail.com"),
-  // Footer social links — optional and unset by default, same reasoning as
-  // NEXT_PUBLIC_WHATSAPP_NUMBER above: no real profile exists yet for any of these, so each
-  // icon is hidden individually rather than linking to a fabricated profile URL.
-  NEXT_PUBLIC_INSTAGRAM_URL: z.string().optional().default(""),
-  NEXT_PUBLIC_FACEBOOK_URL: z.string().optional().default(""),
-  NEXT_PUBLIC_YOUTUBE_URL: z.string().optional().default(""),
-  // Canonical production domain for Saree Grace. Can be overridden in .env.local for local dev.
-  NEXT_PUBLIC_SITE_URL: z.string().url().optional().default("https://www.sareegrace.in"),
-  // Section 19 — error monitoring. No real Sentry project exists yet (same placeholder-
-  // credential situation as Razorpay/Cloudinary, see NOTES.md); left empty, Sentry.init() is
-  // skipped entirely when unset (instrumentation-client.ts / instrumentation.ts) rather than
-  // initializing against a fake DSN.
-  NEXT_PUBLIC_SENTRY_DSN: z.string().optional().default(""),
-});
+function optional(value: string | undefined, fallback = ""): string {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : fallback;
+}
 
-export const env = envSchema.parse({
-  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-  NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-  NEXT_PUBLIC_GA_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
-  NEXT_PUBLIC_WHATSAPP_NUMBER: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER,
-  NEXT_PUBLIC_CONTACT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL,
-  NEXT_PUBLIC_INSTAGRAM_URL: process.env.NEXT_PUBLIC_INSTAGRAM_URL,
-  NEXT_PUBLIC_FACEBOOK_URL: process.env.NEXT_PUBLIC_FACEBOOK_URL,
-  NEXT_PUBLIC_YOUTUBE_URL: process.env.NEXT_PUBLIC_YOUTUBE_URL,
-  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
-  NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
-});
+function url(name: string, value: string | undefined, fallback?: string): string {
+  const resolved = optional(value, fallback);
+  try {
+    new URL(resolved);
+  } catch {
+    throw new Error(`Invalid environment variable ${name}: expected a URL, got "${resolved}"`);
+  }
+  return resolved.replace(/\/$/, "");
+}
+
+export const env = {
+  NEXT_PUBLIC_API_BASE_URL: url("NEXT_PUBLIC_API_BASE_URL", process.env.NEXT_PUBLIC_API_BASE_URL),
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: optional(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID),
+  NEXT_PUBLIC_RAZORPAY_KEY_ID: optional(process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID),
+  NEXT_PUBLIC_GA_MEASUREMENT_ID: optional(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID),
+  // Footer/home WhatsApp contact link; also the footer's "Call us" number. Hidden when unset.
+  NEXT_PUBLIC_WHATSAPP_NUMBER: optional(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER),
+  // Single source of truth for the support address (footer, contact page, signup fallback).
+  NEXT_PUBLIC_CONTACT_EMAIL: optional(
+    process.env.NEXT_PUBLIC_CONTACT_EMAIL,
+    "sareesgrace@gmail.com",
+  ),
+  // Footer social links — each icon is hidden individually while its URL is unset, rather than
+  // linking to a fabricated profile.
+  NEXT_PUBLIC_INSTAGRAM_URL: optional(process.env.NEXT_PUBLIC_INSTAGRAM_URL),
+  NEXT_PUBLIC_FACEBOOK_URL: optional(process.env.NEXT_PUBLIC_FACEBOOK_URL),
+  NEXT_PUBLIC_YOUTUBE_URL: optional(process.env.NEXT_PUBLIC_YOUTUBE_URL),
+  // Canonical production domain — used for canonical/OG URLs, sitemap and JSON-LD.
+  NEXT_PUBLIC_SITE_URL: url(
+    "NEXT_PUBLIC_SITE_URL",
+    process.env.NEXT_PUBLIC_SITE_URL,
+    "https://www.sareegrace.in",
+  ),
+  // Error monitoring; Sentry.init() is skipped entirely while unset.
+  NEXT_PUBLIC_SENTRY_DSN: optional(process.env.NEXT_PUBLIC_SENTRY_DSN),
+} as const;

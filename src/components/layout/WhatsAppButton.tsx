@@ -24,9 +24,8 @@ function WhatsAppGlyph({ className }: { className?: string }) {
 }
 
 /**
- * Floating WhatsApp button displayed on every page in the bottom-right corner.
- * - Sits above general page elements with z-40 while clearing the mobile bottom nav bar (bottom-20 on mobile, bottom-6 on desktop).
- * - Opens WhatsApp click-to-chat in a new tab with pre-filled enquiry message.
+ * Floating WhatsApp button displayed on every page in the bottom-right corner; opens WhatsApp
+ * click-to-chat in a new tab with a pre-filled enquiry message.
  */
 export function WhatsAppButton({
   phoneNumber = getWhatsAppNumber(),
@@ -35,10 +34,12 @@ export function WhatsAppButton({
 }: WhatsAppButtonProps) {
   const url = getWhatsAppUrl(phoneNumber, message);
 
+  // `whatsapp-fab` lets pages with a sticky mobile purchase bar lift the button above it
+  // (globals.css), without this server component needing to know the current route.
   return (
     <div
       className={cn(
-        "fixed right-4 bottom-20 z-40 sm:right-6 lg:right-6 lg:bottom-6 print:hidden",
+        "whatsapp-fab fixed right-4 bottom-4 z-30 lg:right-6 lg:bottom-6 print:hidden",
         className,
       )}
     >
@@ -47,25 +48,9 @@ export function WhatsAppButton({
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat with us on WhatsApp"
-        className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-black/15 transition-all duration-300 ease-in-out hover:scale-110 hover:bg-[#20BD5A] hover:shadow-xl hover:shadow-[#25D366]/30 focus-visible:ring-4 focus-visible:ring-[#25D366]/50 focus-visible:outline-none active:scale-95"
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_6px_20px_-6px_rgb(0_0_0/0.35)] transition-transform duration-200 hover:scale-105 focus-visible:ring-4 focus-visible:ring-[#25D366]/40 focus-visible:outline-none active:scale-95"
       >
-        {/* Subtle breathing ripple effect to draw shopper attention */}
-        <span
-          className="pointer-events-none absolute -inset-1 -z-10 rounded-full bg-[#25D366] opacity-30 transition-opacity duration-300 group-hover:opacity-0 motion-safe:animate-ping"
-          aria-hidden="true"
-          style={{ animationDuration: "3s" }}
-        />
-
-        {/* WhatsApp Icon */}
-        <WhatsAppGlyph />
-
-        {/* Desktop hover tooltip */}
-        {/* <span
-          className="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-md bg-maroon-950 px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-md transition-opacity duration-200 group-hover:opacity-100 sm:inline-block"
-          aria-hidden="true"
-        >
-          Chat with us
-        </span> */}
+        <WhatsAppGlyph className="h-6 w-6" />
       </a>
     </div>
   );

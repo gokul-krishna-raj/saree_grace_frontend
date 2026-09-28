@@ -1,234 +1,346 @@
 "use client";
 
-import { RefreshCw, Shield, Truck } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { PackageCheck, RotateCcw, ShieldCheck, Star } from "lucide-react";
+import Link from "next/link";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import { AddToCartControls } from "@/components/product/AddToCartControls";
 import { ImageGallery } from "@/components/product/ImageGallery";
-import { ProductDescription } from "@/components/product/ProductDescription";
+import { hasProductSpecs, ProductSpecs } from "@/components/product/ProductSpecs";
 import { VariantSelector } from "@/components/product/VariantSelector";
+import { Button } from "@/components/ui/Button";
+import { Disclosure } from "@/components/ui/Disclosure";
+import { useAddToCart } from "@/hooks/useAddToCart";
+import { useProductSelection } from "@/hooks/useProductSelection";
 import { useWishlistToggle } from "@/hooks/useWishlistToggle";
 import { trackViewItem } from "@/lib/analytics";
-import { selectableAttributeNames } from "@/lib/colorCode";
 import { formatPrice } from "@/lib/formatPrice";
-import {
-  applySelection,
-  findMatchingVariant,
-  getAttrValue,
-  getDefaultSelection,
-} from "@/lib/variantSelection";
-import type { Occasion, Product, ProductImage, ProductVariant } from "@/types";
+import { getProductPrimaryImage } from "@/lib/productImage";
+import { recordRecentlyViewed } from "@/lib/recentlyViewed";
+import { useAppDispatch } from "@/store/hooks";
+import { setCartDrawerOpen } from "@/store/slices/uiSlice";
+import type { Occasion, Product } from "@/types";
 
-function getImagesForSelection(
-  product: Product,
-  variants: ProductVariant[],
-  activeVariant: ProductVariant | undefined,
-  selection: Record<string, string>,
-): ProductImage[] {
-  if (product.type !== "variant") {
-    return product.images ?? [];
-  }
-
-  // Find the selected color attribute value, if any
-  const selectedColor = getAttrValue(selection, "color");
-
-  // Collect images strictly for the selected color / active variant
-  if (selectedColor) {
-    const matchingVariants = variants.filter(
-      (v) =>
-        v.isActive &&
-        getAttrValue(v.attributes, "color")?.trim().toLowerCase() ===
-          selectedColor.trim().toLowerCase(),
-    );
-
-    const colorImages: ProductImage[] = [];
-    const seenUrls = new Set<string>();
-
-    // Prioritize activeVariant's images first if activeVariant matches
-    const priorityVariants = activeVariant
-      ? [activeVariant, ...matchingVariants.filter((v) => v._id !== activeVariant._id)]
-      : matchingVariants;
-
-    for (const v of priorityVariants) {
-      for (const img of v.images ?? []) {
-        if (img?.url && !seenUrls.has(img.url)) {
-          seenUrls.add(img.url);
-          colorImages.push(img);
-        }
-      }
-    }
-
-    if (colorImages.length > 0) {
-      return colorImages;
-    }
-  } else if (activeVariant?.images && activeVariant.images.length > 0) {
-    return activeVariant.images;
-  }
-
-  // Fall back to top-level product images if no variant-specific images exist for this color,
-  // but NEVER mix images from other colors!
-  return product.images ?? [];
-}
-
-export function ProductDetailClient({ product }: { product: Product }) {
-  // Fall back to collecting attribute keys from variant items if variantAttributeNames is missing or empty
-  const rawAttributeNames =
-    product.variantAttributeNames && product.variantAttributeNames.length > 0
-      ? product.variantAttributeNames
-      : Array.from(
-          new Set((product.variants ?? []).flatMap((v) => Object.keys(v.attributes ?? {}))),
-        );
-  // "colorCode" (when an admin included it in variantAttributeNames) is metadata for a swatch,
-  // not a dimension a shopper picks — excluded here so selection/matching never requires it.
-  const attributeNames = selectableAttributeNames(rawAttributeNames);
-  const variants = useMemo(() => product.variants ?? [], [product.variants]);
+export function ProductDetailClient({
+  product,
+  description,
+}: {
+  product: Product;
+  /** Server-rendered description body (keeps HTML sanitizing out of the client bundle). */
+  description?: ReactNode;
+}) {
   // Only entries the API actually populated (not just an ObjectId string) can be shown —
   // rendering a raw id would be a meaningless label and a broken link.
   const occasions = (product.occasions ?? []).filter(
     (occasion): occasion is Occasion => typeof occasion !== "string",
   );
-  const [selection, setSelection] = useState(() => getDefaultSelection(variants, attributeNames));
+  const {
+    attributeNames,
+    variants,
+    selection,
+    select,
+    activeVariant,
+    requiresVariantSelection,
+    images,
+    price,
+    compareAtPrice,
+    discountPercent,
+    stock,
+  } = useProductSelection(product);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { isWishlisted, toggle, isLoading: isWishlistLoading } = useWishlistToggle(product._id);
 
   useEffect(() => {
     trackViewItem(product);
+    recordRecentlyViewed({
+      slug: product.slug,
+      name: product.name,
+      image: getProductPrimaryImage(product)?.url,
+      price: product.type === "variant" ? product.startingPrice : (product.price ?? 0),
+      isFromPrice: product.type === "variant" && product.maxPrice > product.startingPrice,
+    });
     // Fire once per product page view, not on every selection/re-render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product._id]);
 
-  const activeVariant =
-    product.type === "variant"
-      ? findMatchingVariant(variants, attributeNames, selection)
-      : undefined;
-  const requiresVariantSelection = product.type === "variant" && !activeVariant;
-
-  const images = useMemo(
-    () => getImagesForSelection(product, variants, activeVariant, selection),
-    [product, variants, activeVariant, selection],
-  );
-  const price =
-    product.type === "variant"
-      ? (activeVariant?.price ?? product.startingPrice)
-      : (product.price ?? 0);
-  const compareAtPrice =
-    product.type === "variant" ? activeVariant?.compareAtPrice : product.compareAtPrice;
-  const discountPercent =
-    compareAtPrice && compareAtPrice > price ? Math.round((1 - price / compareAtPrice) * 100) : 0;
-
-  const categoryName =
-    typeof product.category === "object" && product.category?.name
-      ? product.category.name
-      : undefined;
+  const category = typeof product.category === "object" ? product.category : undefined;
+  const specs = {
+    fabric: product.fabric,
+    color: product.color,
+    isHandloom: product.isHandloom,
+    occasions,
+    sku: activeVariant?.sku || product.sku,
+  };
+  const outOfStock = !requiresVariantSelection && (stock ?? 0) <= 0;
 
   function handleSelect(attributeName: string, value: string) {
-    setSelection((current) =>
-      applySelection(variants, attributeNames, current, attributeName, value),
-    );
+    select(attributeName, value);
     // Reset image index to primary variant image when switching variants
     setSelectedImageIndex(0);
   }
 
+  // Sticky mobile purchase bar: shown only once the main add-to-cart block has scrolled out of
+  // view, so it never duplicates a CTA the shopper can already see.
+  const purchaseRef = useRef<HTMLDivElement>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  useEffect(() => {
+    const el = purchaseRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-4 sm:py-8">
-      <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-        {/* Left Column: Image Gallery */}
-        <ImageGallery
-          images={images}
-          alt={product.name}
-          isHandloom={product.isHandloom}
-          discountPercent={discountPercent}
-          isWishlisted={isWishlisted}
-          onWishlistToggle={toggle}
-          isWishlistLoading={isWishlistLoading}
-          selectedIndex={selectedImageIndex}
-          onSelectImage={setSelectedImageIndex}
-        />
-
-        {/* Right Column: Product Information & Purchase Actions */}
-        <div className="flex flex-col gap-5 sm:gap-6">
-          <div>
-            {categoryName ? (
-              <p className="text-accent mb-2 text-xs font-semibold tracking-wider uppercase sm:text-sm">
-                {categoryName}
-              </p>
-            ) : null}
-            <h1 className="font-display text-foreground mb-3 text-2xl font-bold sm:mb-4 sm:text-3xl lg:text-4xl">
-              {product.name}
-            </h1>
-            <div className="flex flex-wrap items-baseline gap-2.5 sm:gap-3">
-              <span className="text-primary text-2xl font-bold tabular-nums sm:text-3xl">
-                {formatPrice(price)}
-              </span>
-              {compareAtPrice && compareAtPrice > price ? (
-                <span className="text-muted-foreground text-base tabular-nums line-through sm:text-lg">
-                  {formatPrice(compareAtPrice)}
-                </span>
-              ) : null}
-              {discountPercent > 0 ? (
-                <span className="bg-destructive/10 text-destructive rounded-full px-2.5 py-0.5 text-xs font-semibold sm:text-sm">
-                  {discountPercent}% OFF
-                </span>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Variant / Color Selectors */}
-          {product.type === "variant" ? (
-            <VariantSelector
-              attributeNames={attributeNames}
-              variants={variants}
-              selection={selection}
-              onSelect={handleSelect}
-            />
-          ) : null}
-
-          {/* Add to Cart + Buy Now Controls */}
-          <AddToCartControls
-            product={product}
-            variant={activeVariant}
-            requiresVariantSelection={requiresVariantSelection}
-          />
-
-          {/* USPs / Trust Badges */}
-          <div className="border-border my-2 grid grid-cols-3 gap-2 border-y py-6 sm:my-3 sm:gap-4 sm:py-8">
-            <div className="group text-center">
-              <div className="bg-accent/10 text-accent group-hover:bg-accent/20 mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:h-12 sm:w-12">
-                <Truck className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase sm:text-xs">
-                Fast Delivery
-              </p>
-            </div>
-            <div className="group text-center">
-              <div className="bg-accent/10 text-accent group-hover:bg-accent/20 mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:h-12 sm:w-12">
-                <Shield className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase sm:text-xs">
-                Authentic Product
-              </p>
-            </div>
-            <div className="group text-center">
-              <div className="bg-accent/10 text-accent group-hover:bg-accent/20 mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:h-12 sm:w-12">
-                <RefreshCw className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase sm:text-xs">
-                Easy Returns
-              </p>
-            </div>
-          </div>
-
-          {/* Product Highlights Card */}
-          <ProductDescription
-            title="Product Highlights"
-            description={product.description}
-            fabric={product.fabric}
-            color={product.color}
+    <div className="container-page">
+      <div className="grid gap-8 md:grid-cols-2 md:gap-8 lg:gap-12 xl:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] xl:gap-20">
+        <div className="md:sticky md:top-[calc(var(--header-height)+1.5rem)] md:self-start">
+          <ImageGallery
+            images={images}
+            alt={product.name}
             isHandloom={product.isHandloom}
-            occasions={occasions}
-            sku={activeVariant?.sku || product.sku}
+            discountPercent={discountPercent}
+            isWishlisted={isWishlisted}
+            onWishlistToggle={toggle}
+            isWishlistLoading={isWishlistLoading}
+            selectedIndex={selectedImageIndex}
+            onSelectImage={setSelectedImageIndex}
           />
         </div>
+
+        <div className="flex flex-col">
+          {category?.name && category.slug ? (
+            <Link
+              href={`/categories/${category.slug}`}
+              className="eyebrow mb-3 w-fit hover:underline"
+            >
+              {category.name}
+            </Link>
+          ) : null}
+          <h1 className="text-heading-lg text-foreground lg:text-[2.25rem]">{product.name}</h1>
+
+          {product.reviewCount > 0 ? (
+            <a
+              href="#reviews"
+              className="text-muted-foreground mt-3 flex w-fit items-center gap-1.5 text-sm"
+            >
+              <span className="flex" aria-hidden="true">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Star
+                    key={index}
+                    className={
+                      index < Math.round(product.ratingAvg)
+                        ? "fill-gold-500 text-gold-500 h-4 w-4"
+                        : "text-border h-4 w-4"
+                    }
+                  />
+                ))}
+              </span>
+              <span className="text-foreground font-medium">{product.ratingAvg.toFixed(1)}</span>
+              <span className="underline underline-offset-2">
+                {product.reviewCount} review{product.reviewCount === 1 ? "" : "s"}
+              </span>
+            </a>
+          ) : null}
+
+          <div className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-foreground text-2xl font-semibold tabular-nums">
+              {formatPrice(price)}
+            </span>
+            {compareAtPrice && compareAtPrice > price ? (
+              <span className="text-muted-foreground text-base tabular-nums line-through">
+                {formatPrice(compareAtPrice)}
+              </span>
+            ) : null}
+            {discountPercent > 0 ? (
+              <span className="text-sale text-sm font-semibold">Save {discountPercent}%</span>
+            ) : null}
+          </div>
+          <p className="mt-1.5 text-sm">
+            {requiresVariantSelection ? (
+              <span className="text-muted-foreground">Select an option to check availability</span>
+            ) : outOfStock ? (
+              <span className="text-sale font-medium">Currently out of stock</span>
+            ) : (
+              <span className="text-success font-medium">In stock, ready to dispatch</span>
+            )}
+          </p>
+
+          <div className="border-border mt-6 flex flex-col gap-6 border-t pt-6">
+            {product.type === "variant" ? (
+              <VariantSelector
+                attributeNames={attributeNames}
+                variants={variants}
+                selection={selection}
+                onSelect={handleSelect}
+              />
+            ) : null}
+
+            <div ref={purchaseRef}>
+              <AddToCartControls
+                product={product}
+                variant={activeVariant}
+                requiresVariantSelection={requiresVariantSelection}
+              />
+            </div>
+          </div>
+
+          <ul className="bg-cream mt-6 flex flex-col gap-3.5 rounded-md p-5 text-sm">
+            <li className="flex gap-3">
+              <PackageCheck
+                className="text-accent h-5 w-5 shrink-0"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+              <span>
+                <span className="text-foreground font-medium">
+                  Dispatched in 1–2 business days.
+                </span>{" "}
+                <span className="text-muted-foreground">
+                  Delivered across India in 3–7 business days.
+                </span>
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <RotateCcw
+                className="text-accent h-5 w-5 shrink-0"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+              <span>
+                <span className="text-foreground font-medium">7-day returns</span>{" "}
+                <span className="text-muted-foreground">
+                  on unused items in original packaging.
+                </span>
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <ShieldCheck
+                className="text-accent h-5 w-5 shrink-0"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+              <span className="text-muted-foreground">
+                <span className="text-foreground font-medium">Secure checkout</span> with UPI, cards
+                and net banking via Razorpay.
+              </span>
+            </li>
+          </ul>
+
+          <div className="border-border mt-8 border-t">
+            {description ? (
+              <Disclosure title="Description" defaultOpen>
+                {description}
+              </Disclosure>
+            ) : null}
+            {hasProductSpecs(specs) ? (
+              <Disclosure title="Product details" defaultOpen={!description}>
+                <ProductSpecs {...specs} />
+              </Disclosure>
+            ) : null}
+            <Disclosure title="Shipping & delivery">
+              <div className="text-muted-foreground space-y-2 text-sm leading-relaxed">
+                <p>
+                  Every order ships from Elampillai, Salem. Orders are packed and handed to our
+                  courier within 1–2 business days of payment, and usually arrive within 3–7
+                  business days. Shipping charges depend on your state and are shown at checkout
+                  before you pay.
+                </p>
+                <Link
+                  href="/shipping-policy"
+                  className="text-foreground underline underline-offset-2"
+                >
+                  Shipping policy
+                </Link>
+              </div>
+            </Disclosure>
+            <Disclosure title="Returns & exchanges">
+              <div className="text-muted-foreground space-y-2 text-sm leading-relaxed">
+                <p>
+                  Unused items in their original condition and packaging can be returned within 7
+                  days of delivery. Damaged or incorrect items reported within 48 hours are replaced
+                  or refunded at no extra cost. Small variations in weave or shade are natural to
+                  handloom and aren&apos;t considered defects.
+                </p>
+                <Link
+                  href="/refund-policy"
+                  className="text-foreground underline underline-offset-2"
+                >
+                  Return &amp; refund policy
+                </Link>
+              </div>
+            </Disclosure>
+          </div>
+        </div>
+      </div>
+
+      {showStickyBar ? (
+        <StickyPurchaseBar
+          product={product}
+          price={price}
+          outOfStock={outOfStock}
+          onChooseOptions={() =>
+            purchaseRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+          }
+          variant={activeVariant}
+          requiresVariantSelection={requiresVariantSelection}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function StickyPurchaseBar({
+  product,
+  price,
+  outOfStock,
+  variant,
+  requiresVariantSelection,
+  onChooseOptions,
+}: {
+  product: Product;
+  price: number;
+  outOfStock: boolean;
+  variant: ReturnType<typeof useProductSelection>["activeVariant"];
+  requiresVariantSelection: boolean;
+  onChooseOptions: () => void;
+}) {
+  const dispatch = useAppDispatch();
+  const { addToCart, isLoading, isAuthPending } = useAddToCart();
+
+  async function handleAdd() {
+    if (requiresVariantSelection) {
+      onChooseOptions();
+      return;
+    }
+    if (await addToCart(product, variant, 1)) dispatch(setCartDrawerOpen(true));
+  }
+
+  return (
+    <div
+      data-sticky-cta
+      className="border-border bg-background/95 animate-slide-in-up fixed inset-x-0 bottom-0 z-30 border-t backdrop-blur-sm md:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="container-page flex h-[4.5rem] items-center gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-muted-foreground truncate text-xs">{product.name}</p>
+          <p className="text-foreground text-base font-semibold tabular-nums">
+            {formatPrice(price)}
+          </p>
+        </div>
+        <Button
+          size="lg"
+          className="shrink-0 px-6"
+          onClick={handleAdd}
+          disabled={outOfStock || isLoading || isAuthPending}
+          isLoading={isLoading}
+        >
+          {outOfStock ? "Out of stock" : requiresVariantSelection ? "Choose option" : "Add to cart"}
+        </Button>
       </div>
     </div>
   );

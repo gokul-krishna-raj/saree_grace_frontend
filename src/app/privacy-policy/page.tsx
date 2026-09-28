@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 
 import { env } from "@/lib/env";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Privacy Policy",
-  description: "How Saree Grace collects, uses, and protects your personal information.",
-  alternates: { canonical: "/privacy-policy" },
-  openGraph: {
-    title: "Privacy Policy | Saree Grace",
-    description: "How Saree Grace collects, uses, and protects your personal information.",
-    url: "/privacy-policy",
-  },
-};
+  description:
+    "What personal information Saree Grace collects when you create an account or place an order, how it is used, how we use cookies, and your rights.",
+  path: "/privacy-policy",
+});
 
 export default function PrivacyPolicyPage() {
   return (

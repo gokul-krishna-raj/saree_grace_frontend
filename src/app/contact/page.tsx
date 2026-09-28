@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 
 import { env } from "@/lib/env";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Contact Us",
-  description: "Get in touch with Saree Grace for questions, orders, and customer support.",
-  alternates: { canonical: "/contact" },
-  openGraph: {
-    title: "Contact Us | Saree Grace",
-    description: "Get in touch with Saree Grace for questions, orders, and customer support.",
-    url: "/contact",
-  },
-};
+  description:
+    "Contact Saree Grace by email or WhatsApp for help choosing a saree, or with questions about an order, delivery or returns. Based in Elampillai, Salem.",
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (

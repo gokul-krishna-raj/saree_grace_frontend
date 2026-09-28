@@ -48,25 +48,17 @@ describe("useCart totals (guest path)", () => {
 
     const expectedItemsTotal = 400 * 2 + 7999 * 1;
     expect(result.current.itemsTotal).toBe(expectedItemsTotal);
-    expect(result.current.total).toBe(expectedItemsTotal + result.current.shippingFee);
+    expect(result.current.total).toBe(expectedItemsTotal);
   });
 
-  it("charges shipping below the free-shipping threshold and waives it above", () => {
-    const belowThresholdStore = makeStore();
-    belowThresholdStore.dispatch(guestItemAdded({ ...lineA, priceSnapshot: 400, qty: 1 }));
-    const { result: below } = renderHook(() => useCart(), {
-      wrapper: ({ children }) => <Provider store={belowThresholdStore}>{children}</Provider>,
+  it("defers shipping to checkout instead of guessing a fee (it depends on the delivery state)", () => {
+    const store = makeStore();
+    store.dispatch(guestItemAdded({ ...lineA, priceSnapshot: 400, qty: 1 }));
+    const { result } = renderHook(() => useCart(), {
+      wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
     });
-    expect(below.current.itemsTotal).toBeLessThan(999);
-    expect(below.current.shippingFee).toBe(99);
-
-    const aboveThresholdStore = makeStore();
-    aboveThresholdStore.dispatch(guestItemAdded({ ...lineB, qty: 1 }));
-    const { result: above } = renderHook(() => useCart(), {
-      wrapper: ({ children }) => <Provider store={aboveThresholdStore}>{children}</Provider>,
-    });
-    expect(above.current.itemsTotal).toBeGreaterThanOrEqual(999);
-    expect(above.current.shippingFee).toBe(0);
+    expect(result.current.shippingFee).toBeNull();
+    expect(result.current.total).toBe(400);
   });
 
   it("recomputes totals correctly after updateQty and removeItem", () => {
