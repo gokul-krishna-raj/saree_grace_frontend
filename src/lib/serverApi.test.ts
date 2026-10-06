@@ -39,6 +39,26 @@ describe("serverFetch", () => {
   });
 });
 
+describe("internal API key", () => {
+  afterEach(() => {
+    delete process.env.INTERNAL_API_KEY;
+  });
+
+  it("sends x-internal-api-key on server-side fetches when configured", async () => {
+    process.env.INTERNAL_API_KEY = "test-internal-key";
+    respond(200, { success: true, data: {} });
+    await serverFetch("/products");
+    const init = jest.mocked(global.fetch).mock.calls[0]![1]!;
+    expect(init.headers).toEqual({ "x-internal-api-key": "test-internal-key" });
+  });
+
+  it("sends no header when unset", async () => {
+    respond(200, { success: true, data: {} });
+    await serverFetch("/products");
+    expect(jest.mocked(global.fetch).mock.calls[0]![1]!.headers).toEqual({});
+  });
+});
+
 describe("serverFetchPage", () => {
   it("returns data with the cursor", async () => {
     respond(200, { success: true, data: { products: [] }, meta: { nextCursor: "abc" } });

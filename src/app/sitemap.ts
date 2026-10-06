@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { env } from "@/lib/env";
+import { internalApiHeaders } from "@/lib/internalApi";
 import type { ApiSuccess, Product } from "@/types";
 
 const STATIC_ROUTES: Array<{
@@ -49,6 +50,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     let res: Response;
     try {
       res = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/products${query}`, {
+        headers: internalApiHeaders(),
         next: { revalidate },
       });
     } catch {
@@ -85,6 +87,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const categoryEntries: MetadataRoute.Sitemap = [];
   try {
     const catRes = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/categories`, {
+      headers: internalApiHeaders(),
       next: { revalidate },
     });
     if (catRes.ok) {

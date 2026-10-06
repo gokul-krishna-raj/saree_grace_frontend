@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { internalApiHeaders } from "@/lib/internalApi";
 import type { ApiErrorBody, ApiSuccess } from "@/types";
 
 // Server Components fetch directly (not via RTK Query, which is a client-side cache) so
@@ -26,6 +27,7 @@ export class ServerFetchError extends Error {
 
 async function request<T>(path: string, revalidateSeconds: number): Promise<ApiSuccess<T> | null> {
   const res = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}${path}`, {
+    headers: internalApiHeaders(),
     next: { revalidate: revalidateSeconds },
   });
 

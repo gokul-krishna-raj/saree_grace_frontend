@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { internalApiHeaders } from "@/lib/internalApi";
 
 // Uptime probe for the storefront: 200 only when the backend answers and its database ping
 // succeeds (the backend's /health runs the ping). Never cached.
@@ -9,7 +10,11 @@ export async function GET() {
   // The API base is ".../api/v1"; the backend also serves /health under it.
   const url = `${env.NEXT_PUBLIC_API_BASE_URL}/health`;
   try {
-    const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const res = await fetch(url, {
+      headers: internalApiHeaders(),
+      cache: "no-store",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
     const body = (await res.json().catch(() => null)) as {
       success?: boolean;
       data?: { dbLatencyMs?: number };
