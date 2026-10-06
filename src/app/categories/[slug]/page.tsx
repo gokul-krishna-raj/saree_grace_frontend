@@ -23,6 +23,8 @@ import type { Category, Product } from "@/types";
 // Filters/sort live in the query string and are applied client-side, so they don't make this
 // route dynamic; filtered URLs canonicalise to the clean category URL.
 export const revalidate = 300;
+// Slugs not known at build time (all of them — see generateStaticParams) render on first request.
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   return [];

@@ -89,6 +89,7 @@ function EditSimpleProductForm({ product }: { product: Product }) {
     try {
       await updateProduct({
         id: product._id,
+        previousSlug: product.slug,
         ...values,
         removeImagePublicIds: removedImageIds.length > 0 ? removedImageIds : undefined,
         images: newImages.length > 0 ? newImages : undefined,
@@ -515,6 +516,7 @@ function EditVariantProductForm({ product }: { product: Product }) {
 
       await updateProduct({
         id: product._id,
+        previousSlug: product.slug,
         ...baseValues,
         variantAttributeNames: parsedAttributeNames,
         variants: formattedVariants,

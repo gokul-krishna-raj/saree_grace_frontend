@@ -24,6 +24,8 @@ import { ReviewsSection } from "./ReviewsSection";
 // instead of a backend round trip on every view. Stock/price shown here are re-validated by the
 // cart API at add-to-cart time, so a few minutes of staleness can't oversell.
 export const revalidate = 300;
+// Slugs not known at build time (all of them — see generateStaticParams) render on first request.
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   return [];

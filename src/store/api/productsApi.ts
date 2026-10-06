@@ -1,4 +1,5 @@
 import { buildFormData, buildProductFormData } from "@/lib/formData";
+import { revalidateStorefront, type RevalidateStorefrontInput } from "@/lib/revalidateStorefront";
 import { baseApi } from "@/store/api/baseApi";
 import type { ApiSuccess, Product, ProductFacets, ProductSort, ProductType } from "@/types";
 
@@ -20,6 +21,32 @@ export interface ProductListFilters {
 }
 
 const DEFAULT_BEST_SELLERS_LIMIT = 10;
+
+// Shared `onQueryStarted` for admin product writes: once the backend confirms the write, refresh
+// the ISR-cached storefront pages it affects (see lib/revalidateStorefront.ts).
+function refreshStorefrontAfter<Arg, Result>(
+  toInput: (arg: Arg, result: Result) => RevalidateStorefrontInput,
+) {
+  return async (
+    arg: Arg,
+    {
+      queryFulfilled,
+      getState,
+    }: { queryFulfilled: Promise<{ data: Result }>; getState: () => unknown },
+  ) => {
+    let result: Result;
+    try {
+      ({ data: result } = await queryFulfilled);
+    } catch {
+      return; // the write failed — nothing changed on the storefront
+    }
+    await revalidateStorefront(getState, toInput(arg, result));
+  };
+}
+
+const refreshProductPage = refreshStorefrontAfter((_arg: unknown, product: Product) => ({
+  productSlugs: [product.slug],
+}));
 
 export interface ProductListResult {
   products: Product[];
@@ -96,6 +123,9 @@ export interface CreateVariantProductFields {
 
 export interface UpdateProductFields {
   id: string;
+  // The slug before this edit — renaming regenerates the slug, and the old URL's cached page
+  // must be refreshed too. Not sent to the backend.
+  previousSlug?: string;
   name?: string;
   description?: string;
   category?: string;
@@ -194,6 +224,7 @@ export const productsApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiSuccess<{ product: Product }>) => response.data.product,
       invalidatesTags: [{ type: "Product", id: "LIST" }],
+      onQueryStarted: refreshProductPage,
     }),
     createVariantShellProduct: builder.mutation<Product, VariantShellFields>({
       query: ({ variantAttributeNames, ...fields }) => ({
@@ -207,6 +238,7 @@ export const productsApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiSuccess<{ product: Product }>) => response.data.product,
       invalidatesTags: [{ type: "Product", id: "LIST" }],
+      onQueryStarted: refreshProductPage,
     }),
     createVariantProduct: builder.mutation<Product, CreateVariantProductFields>({
       query: ({ variantImages, ...fields }) => ({
@@ -223,6 +255,7 @@ export const productsApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiSuccess<{ product: Product }>) => response.data.product,
       invalidatesTags: [{ type: "Product", id: "LIST" }],
+      onQueryStarted: refreshProductPage,
     }),
     addProductVariant: builder.mutation<
       Product,
@@ -235,9 +268,11 @@ export const productsApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiSuccess<{ product: Product }>) => response.data.product,
       invalidatesTags: (_result, _error, { productId }) => [{ type: "Product", id: productId }],
+      onQueryStarted: refreshProductPage,
     }),
     updateProduct: builder.mutation<Product, UpdateProductFields>({
-      query: ({ id, images, variantImages, ...fields }) => ({
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- previousSlug is client-only
+      query: ({ id, previousSlug, images, variantImages, ...fields }) => ({
         url: `/admin/products/${id}`,
         method: "PUT",
         body: buildProductFormData(fields, images, variantImages),
@@ -247,6 +282,11 @@ export const productsApi = baseApi.injectEndpoints({
         { type: "Product", id },
         { type: "Product", id: "LIST" },
       ],
+      onQueryStarted: refreshStorefrontAfter((arg: UpdateProductFields, product: Product) => ({
+        productSlugs: [product.slug, arg.previousSlug].filter(
+          (slug, i, all): slug is string => !!slug && all.indexOf(slug) === i,
+        ),
+      })),
     }),
     updateProductVariant: builder.mutation<Product, UpdateProductVariantFields>({
       query: ({ productId, variantId, images, ...fields }) => ({
@@ -256,6 +296,7 @@ export const productsApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiSuccess<{ product: Product }>) => response.data.product,
       invalidatesTags: (_result, _error, { productId }) => [{ type: "Product", id: productId }],
+      onQueryStarted: refreshProductPage,
     }),
     deleteProduct: builder.mutation<{ message: string }, { id: string }>({
       query: ({ id }) => ({ url: `/admin/products/${id}`, method: "DELETE" }),
@@ -264,6 +305,8 @@ export const productsApi = baseApi.injectEndpoints({
         { type: "Product", id },
         { type: "Product", id: "LIST" },
       ],
+      // Only the id is known here, so mark every product page stale.
+      onQueryStarted: refreshStorefrontAfter(() => ({ allProducts: true })),
     }),
     deleteProductVariant: builder.mutation<Product, { productId: string; variantId: string }>({
       query: ({ productId, variantId }) => ({
@@ -272,6 +315,7 @@ export const productsApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiSuccess<{ product: Product }>) => response.data.product,
       invalidatesTags: (_result, _error, { productId }) => [{ type: "Product", id: productId }],
+      onQueryStarted: refreshProductPage,
     }),
   }),
 });
