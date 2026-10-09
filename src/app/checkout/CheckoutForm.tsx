@@ -6,9 +6,10 @@ import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { trackInitiateCheckout } from "@/components/analytics/MetaPixel";
 import { CartSummary } from "@/components/cart/CartSummary";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -23,7 +24,7 @@ import { type AddressFormValues, addressSchema } from "@/lib/validation/checkout
 import { useCreateOrderMutation } from "@/store/api/ordersApi";
 
 export function CheckoutForm() {
-  const { lines, itemsTotal, isEmpty } = useCart();
+  const { lines, itemsTotal, isEmpty, isLoading: isCartLoading } = useCart();
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const { payForOrder, isProcessing } = useRazorpayCheckout();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,6 +45,18 @@ export function CheckoutForm() {
   const selectedState = watch("state");
   const shippingFee = selectedState ? getShippingFeeForState(selectedState) : null;
   const total = itemsTotal + (shippingFee ?? 0);
+
+  // Once per visit to checkout, as soon as the cart has resolved with something in it.
+  const hasTrackedCheckout = useRef(false);
+  useEffect(() => {
+    if (hasTrackedCheckout.current || isCartLoading || lines.length === 0) return;
+    hasTrackedCheckout.current = true;
+    trackInitiateCheckout({
+      contentIds: lines.map((line) => line.productId),
+      numItems: lines.reduce((sum, line) => sum + line.qty, 0),
+      value: itemsTotal,
+    });
+  }, [isCartLoading, lines, itemsTotal]);
 
   if (isProcessing) {
     return (

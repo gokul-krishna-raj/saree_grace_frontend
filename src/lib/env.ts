@@ -25,6 +25,8 @@ export const env = {
   NEXT_PUBLIC_GOOGLE_CLIENT_ID: optional(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID),
   NEXT_PUBLIC_RAZORPAY_KEY_ID: optional(process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID),
   NEXT_PUBLIC_GA_MEASUREMENT_ID: optional(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID),
+  // Meta Pixel; <MetaPixel/> and its track* helpers are no-ops while unset.
+  NEXT_PUBLIC_META_PIXEL_ID: optional(process.env.NEXT_PUBLIC_META_PIXEL_ID),
   // Footer/home WhatsApp contact link; also the footer's "Call us" number. Hidden when unset.
   NEXT_PUBLIC_WHATSAPP_NUMBER: optional(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER),
   // Single source of truth for the support address (footer, contact page, signup fallback).
