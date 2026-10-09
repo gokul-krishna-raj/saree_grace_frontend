@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useCart } from "@/hooks/useCart";
 import { useRazorpayCheckout } from "@/hooks/useRazorpayCheckout";
+import { trackBeginCheckout } from "@/lib/analytics";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { cn } from "@/lib/cn";
 import { INDIAN_STATES } from "@/lib/indianStates";
@@ -46,16 +47,14 @@ export function CheckoutForm() {
   const shippingFee = selectedState ? getShippingFeeForState(selectedState) : null;
   const total = itemsTotal + (shippingFee ?? 0);
 
-  // Once per visit to checkout, as soon as the cart has resolved with something in it.
+  // Once per visit to checkout, as soon as the cart has resolved with something in it. The ref
+  // (not state) keeps Strict Mode's double-invoked effect and later re-renders from re-firing.
   const hasTrackedCheckout = useRef(false);
   useEffect(() => {
     if (hasTrackedCheckout.current || isCartLoading || lines.length === 0) return;
     hasTrackedCheckout.current = true;
-    trackInitiateCheckout({
-      contentIds: lines.map((line) => line.productId),
-      numItems: lines.reduce((sum, line) => sum + line.qty, 0),
-      value: itemsTotal,
-    });
+    trackBeginCheckout(lines, itemsTotal);
+    trackInitiateCheckout(lines, itemsTotal);
   }, [isCartLoading, lines, itemsTotal]);
 
   if (isProcessing) {

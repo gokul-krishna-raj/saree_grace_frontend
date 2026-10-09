@@ -3,13 +3,11 @@
 import { CheckCircle2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect } from "react";
 
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { trackPurchase } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/formatPrice";
 import { ORDER_STATUS_BADGE_VARIANT, ORDER_STATUS_LABELS } from "@/lib/orderStatus";
@@ -73,12 +71,6 @@ function SuccessContent() {
     skip: !orderId,
     refetchOnMountOrArgChange: true,
   });
-
-  useEffect(() => {
-    if (order) trackPurchase(order);
-    // Fire once per order landed on, not on every unrelated re-render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [order?._id]);
 
   if (isLoading && !order) {
     return <SuccessSkeleton />;

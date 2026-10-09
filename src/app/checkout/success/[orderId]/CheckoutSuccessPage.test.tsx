@@ -28,10 +28,6 @@ jest.mock("@/store/api/ordersApi", () => ({
   useGetOrderByIdQuery: () => queryResult,
 }));
 
-jest.mock("@/lib/analytics", () => ({
-  trackPurchase: jest.fn(),
-}));
-
 import CheckoutSuccessPage from "./page";
 
 const mockOrder: Order = {

@@ -4,7 +4,7 @@ jest.mock("@/lib/env", () => ({
   env: { NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST123" },
 }));
 
-import { trackAddToCart, trackPurchase, trackViewItem } from "./analytics";
+import { trackAddToCart, trackBeginCheckout, trackPurchase, trackViewItem } from "./analytics";
 
 const product: Product = {
   _id: "p1",
@@ -57,7 +57,6 @@ const order: Order = {
 describe("analytics", () => {
   beforeEach(() => {
     window.gtag = jest.fn();
-    sessionStorage.clear();
   });
 
   it("sends a view_item event with the product's price and id", () => {
@@ -78,16 +77,65 @@ describe("analytics", () => {
     );
   });
 
-  it("sends a purchase event once, then skips a duplicate call for the same order (e.g. a page refresh)", () => {
-    trackPurchase(order);
-    trackPurchase(order);
+  it("uses the variant id as item_id and its colour as item_variant for a variant", () => {
+    const variant = {
+      _id: "v1",
+      sku: "SKU-1",
+      attributes: { Colour: "Maroon" },
+      price: 2499,
+      stock: 1,
+      images: [],
+      isActive: true,
+    };
+    trackAddToCart({ ...product, type: "variant" }, variant, 2);
+    expect(window.gtag).toHaveBeenCalledWith(
+      "event",
+      "add_to_cart",
+      expect.objectContaining({
+        value: 2499 * 2,
+        items: [expect.objectContaining({ item_id: "v1", item_variant: "Maroon", quantity: 2 })],
+      }),
+    );
+  });
 
-    const purchaseCalls = (window.gtag as jest.Mock).mock.calls.filter(
-      (call) => call[1] === "purchase",
+  it("sends begin_checkout with every cart line, using the variant id when there is one", () => {
+    trackBeginCheckout(
+      [
+        { productId: "p1", variantId: null, name: "A", price: 1000, qty: 1 },
+        { productId: "p2", variantId: "v2", name: "B", price: 500, qty: 2 },
+      ],
+      2000,
     );
-    expect(purchaseCalls).toHaveLength(1);
-    expect(purchaseCalls[0][2]).toEqual(
-      expect.objectContaining({ transaction_id: "SG-1001", value: 1998 }),
+    expect(window.gtag).toHaveBeenCalledWith(
+      "event",
+      "begin_checkout",
+      expect.objectContaining({
+        value: 2000,
+        currency: "INR",
+        items: [
+          expect.objectContaining({ item_id: "p1", quantity: 1 }),
+          expect.objectContaining({ item_id: "v2", quantity: 2 }),
+        ],
+      }),
     );
+  });
+
+  it("sends a purchase keyed by the order's _id", () => {
+    trackPurchase(order);
+    expect(window.gtag).toHaveBeenCalledWith(
+      "event",
+      "purchase",
+      expect.objectContaining({
+        transaction_id: "o1",
+        value: 1998,
+        currency: "INR",
+        items: [expect.objectContaining({ item_id: "p1", price: 1899, quantity: 1 })],
+      }),
+    );
+  });
+
+  it("is a no-op when gtag never loaded (ad blocker)", () => {
+    delete window.gtag;
+    expect(() => trackViewItem(product)).not.toThrow();
   });
 });

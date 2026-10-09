@@ -70,6 +70,14 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/saree_grace_favicon.png",
   },
+  verification: {
+    ...(env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+      ? { google: env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+      : {}),
+    ...(env.NEXT_PUBLIC_META_DOMAIN_VERIFICATION
+      ? { other: { "facebook-domain-verification": env.NEXT_PUBLIC_META_DOMAIN_VERIFICATION } }
+      : {}),
+  },
 };
 
 export const viewport: Viewport = {
@@ -92,10 +100,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         <GoogleAnalytics />
-        <MetaPixel />
         <WebVitals />
         <StoreProvider>
           <AuthBootstrap />
+          <MetaPixel />
           <AnnouncementBar />
           <Header categories={categories} />
           <div id="main-content" className="flex flex-1 flex-col" tabIndex={-1}>
