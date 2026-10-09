@@ -5,6 +5,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { WebVitals } from "@/components/analytics/WebVitals";
 import { AuthBootstrap } from "@/components/auth/AuthBootstrap";
 import { CartDrawer } from "@/components/cart/CartDrawer";
@@ -91,6 +92,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         <GoogleAnalytics />
+        <MetaPixel />
         <WebVitals />
         <StoreProvider>
           <AuthBootstrap />

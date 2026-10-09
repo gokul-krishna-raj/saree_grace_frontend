@@ -5,6 +5,7 @@ import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
+import { trackPurchase } from "@/components/analytics/MetaPixel";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { toast } from "@/lib/toast";
 import { useCreateRazorpayOrderMutation, useVerifyPaymentMutation } from "@/store/api/paymentsApi";
@@ -72,6 +73,26 @@ function toErrorMessage(error: unknown, fallback?: string) {
   return getApiErrorMessage(error as FetchBaseQueryError | SerializedError, fallback);
 }
 
+function orderItemProductId(item: Order["items"][number]): string | undefined {
+  if (!item.product) return undefined;
+  return typeof item.product === "string" ? item.product : item.product._id;
+}
+
+// Only ever called after verifyPayment succeeds — never on the failed/dismissed paths. Swallows
+// any error so analytics can never push a paid order onto the failed-payment route.
+function trackVerifiedPurchase(order: Order) {
+  try {
+    trackPurchase({
+      orderId: order._id,
+      contentIds: order.items.map(orderItemProductId).filter((id): id is string => !!id),
+      numItems: order.items.reduce((sum, item) => sum + item.qty, 0),
+      value: order.total,
+    });
+  } catch {
+    // Tracking is best-effort.
+  }
+}
+
 // Shared by the checkout page (first payment attempt) and the failed-payment page (retry) —
 // retrying re-uses the SAME internal order rather than creating a new one, since the backend
 // clears the cart and decrements stock at order-creation time, not at payment time (see
@@ -99,6 +120,7 @@ export function useRazorpayCheckout() {
               razorpaySignature: "mock_signature",
             }).unwrap();
             router.push(`/checkout/success/${order._id}`);
+            trackVerifiedPurchase(order);
           } catch (err) {
             toast.error(toErrorMessage(err, "We couldn't confirm your test payment."));
             router.push(`/checkout/failed/${order._id}`);
@@ -162,6 +184,7 @@ export function useRazorpayCheckout() {
                   razorpaySignature: response.razorpay_signature,
                 }).unwrap();
                 router.push(`/checkout/success/${order._id}`);
+                trackVerifiedPurchase(order);
               } catch (error) {
                 toast.error(toErrorMessage(error, "We couldn't confirm your payment."));
                 router.push(`/checkout/failed/${order._id}`);

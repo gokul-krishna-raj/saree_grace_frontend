@@ -1,6 +1,7 @@
 import type { SerializedError } from "@reduxjs/toolkit";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 
+import { trackAddToCart as trackMetaAddToCart } from "@/components/analytics/MetaPixel";
 import { trackAddToCart } from "@/lib/analytics";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { getProductPrimaryImage } from "@/lib/productImage";
@@ -39,12 +40,24 @@ export function useAddToCart() {
         }),
       );
       trackAddToCart(product, variant, qty);
+      trackMetaAddToCart({
+        contentId: product._id,
+        contentName: product.name,
+        price: price ?? 0,
+        quantity: qty,
+      });
       return true;
     }
 
     try {
       await addCartItem({ productId: product._id, variantId: variant?._id ?? null, qty }).unwrap();
       trackAddToCart(product, variant, qty);
+      trackMetaAddToCart({
+        contentId: product._id,
+        contentName: product.name,
+        price: price ?? 0,
+        quantity: qty,
+      });
       return true;
     } catch (error) {
       toast.error(getApiErrorMessage(error as FetchBaseQueryError | SerializedError));

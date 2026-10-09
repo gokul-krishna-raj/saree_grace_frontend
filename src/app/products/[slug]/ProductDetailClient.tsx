@@ -4,6 +4,7 @@ import { PackageCheck, RotateCcw, ShieldCheck, Star } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
+import { trackViewContent } from "@/components/analytics/MetaPixel";
 import { AddToCartControls } from "@/components/product/AddToCartControls";
 import { ImageGallery } from "@/components/product/ImageGallery";
 import { hasProductSpecs, ProductSpecs } from "@/components/product/ProductSpecs";
@@ -52,6 +53,11 @@ export function ProductDetailClient({
 
   useEffect(() => {
     trackViewItem(product);
+    trackViewContent({
+      contentId: product._id,
+      contentName: product.name,
+      value: product.type === "variant" ? product.startingPrice : (product.price ?? 0),
+    });
     recordRecentlyViewed({
       slug: product.slug,
       name: product.name,
