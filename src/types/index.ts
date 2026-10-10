@@ -18,6 +18,8 @@ export interface User {
   _id: string;
   name: string;
   email: string;
+  // Required at email signup; absent for accounts created via Google sign-in.
+  phone?: string;
   googleId?: string | null;
   role: UserRole;
   addresses: Address[];

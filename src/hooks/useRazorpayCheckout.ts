@@ -5,9 +5,11 @@ import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-import { trackPurchase } from "@/components/analytics/MetaPixel";
+import { trackPurchase as trackMetaPurchase } from "@/components/analytics/MetaPixel";
+import { trackPurchase as trackGaPurchase } from "@/lib/analytics";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { toast } from "@/lib/toast";
+import { claimPurchaseTracking } from "@/lib/trackingItem";
 import { useCreateRazorpayOrderMutation, useVerifyPaymentMutation } from "@/store/api/paymentsApi";
 import type { Order } from "@/types";
 
@@ -73,21 +75,14 @@ function toErrorMessage(error: unknown, fallback?: string) {
   return getApiErrorMessage(error as FetchBaseQueryError | SerializedError, fallback);
 }
 
-function orderItemProductId(item: Order["items"][number]): string | undefined {
-  if (!item.product) return undefined;
-  return typeof item.product === "string" ? item.product : item.product._id;
-}
-
-// Only ever called after verifyPayment succeeds — never on the failed/dismissed paths. Swallows
-// any error so analytics can never push a paid order onto the failed-payment route.
+// Only ever called after verifyPayment succeeds — never on the failed/dismissed paths — and at
+// most once per order (claimPurchaseTracking). Swallows any error so analytics can never push a
+// paid order onto the failed-payment route.
 function trackVerifiedPurchase(order: Order) {
   try {
-    trackPurchase({
-      orderId: order._id,
-      contentIds: order.items.map(orderItemProductId).filter((id): id is string => !!id),
-      numItems: order.items.reduce((sum, item) => sum + item.qty, 0),
-      value: order.total,
-    });
+    if (!claimPurchaseTracking(order._id)) return;
+    trackGaPurchase(order);
+    trackMetaPurchase(order);
   } catch {
     // Tracking is best-effort.
   }

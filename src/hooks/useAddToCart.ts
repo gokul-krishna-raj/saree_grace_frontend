@@ -40,24 +40,14 @@ export function useAddToCart() {
         }),
       );
       trackAddToCart(product, variant, qty);
-      trackMetaAddToCart({
-        contentId: product._id,
-        contentName: product.name,
-        price: price ?? 0,
-        quantity: qty,
-      });
+      trackMetaAddToCart(product, variant, qty);
       return true;
     }
 
     try {
       await addCartItem({ productId: product._id, variantId: variant?._id ?? null, qty }).unwrap();
       trackAddToCart(product, variant, qty);
-      trackMetaAddToCart({
-        contentId: product._id,
-        contentName: product.name,
-        price: price ?? 0,
-        quantity: qty,
-      });
+      trackMetaAddToCart(product, variant, qty);
       return true;
     } catch (error) {
       toast.error(getApiErrorMessage(error as FetchBaseQueryError | SerializedError));

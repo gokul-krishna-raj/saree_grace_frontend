@@ -1,13 +1,17 @@
 "use client";
 
+import type { SerializedError } from "@reduxjs/toolkit";
+import type { FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { getApiErrorMessage } from "@/lib/apiError";
 import { formatPrice } from "@/lib/formatPrice";
 import { toast } from "@/lib/toast";
+import { downloadTextFile, useExportProductsCsvMutation } from "@/store/api/productImportApi";
 import { useDeleteProductMutation, useGetProductsQuery } from "@/store/api/productsApi";
 import type { Product } from "@/types";
 
@@ -20,6 +24,7 @@ export default function AdminProductsPage() {
     sort: "newest",
   });
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+  const [exportProductsCsv, { isLoading: isExporting }] = useExportProductsCsvMutation();
 
   const seenIds = new Set(products.map((p) => p._id));
   const merged =
@@ -38,11 +43,40 @@ export default function AdminProductsPage() {
     }
   }
 
+  async function handleExport() {
+    try {
+      const file = await exportProductsCsv().unwrap();
+      downloadTextFile(file.csv, file.filename);
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(
+          error as FetchBaseQueryError | SerializedError,
+          "Couldn't export products.",
+        ),
+      );
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-heading text-maroon-900 text-2xl">Products</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleExport}
+            isLoading={isExporting}
+            disabled={isExporting}
+          >
+            Export CSV
+          </Button>
+          <Link
+            href="/admin/products/import"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            Import CSV
+          </Link>
           <Link
             href="/admin/products/new?type=simple"
             className={buttonVariants({ variant: "ghost", size: "sm" })}
@@ -58,11 +92,11 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* Only products with isActive: true can ever appear here or be looked up again —
-          BACKEND_CONTRACT.md / NOTES.md: there is no admin product-list endpoint and no by-id
-          lookup, only the public by-slug lookup which itself requires isActive: true. So this
-          UI never exposes a "deactivate" action — only real delete — to avoid stranding a
-          product somewhere no page can ever show it again. */}
+      {/* Only products with isActive: true appear here — this list (and the editor's by-slug
+          lookup) uses the public endpoints, which filter out inactive products. This page still
+          has no "deactivate" action, but a CSV import can hide products (productActive = FALSE)
+          and variants. They aren't stranded: Export CSV includes inactive products, so setting
+          productActive back to TRUE and re-importing brings one back. */}
       {isLoading ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 5 }).map((_, index) => (

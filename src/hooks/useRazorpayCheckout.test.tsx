@@ -12,6 +12,15 @@ jest.mock("@/store/api/paymentsApi", () => ({
   useVerifyPaymentMutation: () => [verifyPaymentMock, { isLoading: false }],
 }));
 
+const gaPurchaseMock = jest.fn();
+const metaPurchaseMock = jest.fn();
+jest.mock("@/lib/analytics", () => ({
+  trackPurchase: (...args: unknown[]) => gaPurchaseMock(...args),
+}));
+jest.mock("@/components/analytics/MetaPixel", () => ({
+  trackPurchase: (...args: unknown[]) => metaPurchaseMock(...args),
+}));
+
 import { useRazorpayCheckout } from "./useRazorpayCheckout";
 
 const order = {
@@ -28,6 +37,9 @@ describe("useRazorpayCheckout", () => {
     createRazorpayOrderMock.mockReset();
     verifyPaymentMock.mockReset();
     razorpayOpenMock.mockReset();
+    gaPurchaseMock.mockReset();
+    metaPurchaseMock.mockReset();
+    localStorage.clear();
     capturedOptions = null;
 
     createRazorpayOrderMock.mockReturnValue({
@@ -96,6 +108,10 @@ describe("useRazorpayCheckout", () => {
       razorpaySignature: "sig",
     });
     expect(pushMock).toHaveBeenCalledWith("/checkout/success/order1");
+    expect(gaPurchaseMock).toHaveBeenCalledTimes(1);
+    expect(gaPurchaseMock).toHaveBeenCalledWith(order);
+    expect(metaPurchaseMock).toHaveBeenCalledTimes(1);
+    expect(metaPurchaseMock).toHaveBeenCalledWith(order);
   });
 
   it("redirects to the failed page (without calling verifyPayment) when Razorpay's modal is dismissed", async () => {
@@ -112,6 +128,8 @@ describe("useRazorpayCheckout", () => {
 
     expect(verifyPaymentMock).not.toHaveBeenCalled();
     expect(pushMock).toHaveBeenCalledWith("/checkout/failed/order1");
+    expect(gaPurchaseMock).not.toHaveBeenCalled();
+    expect(metaPurchaseMock).not.toHaveBeenCalled();
   });
 
   it("redirects to the failed page when signature verification itself fails", async () => {
@@ -133,5 +151,7 @@ describe("useRazorpayCheckout", () => {
     });
 
     expect(pushMock).toHaveBeenCalledWith("/checkout/failed/order1");
+    expect(gaPurchaseMock).not.toHaveBeenCalled();
+    expect(metaPurchaseMock).not.toHaveBeenCalled();
   });
 });

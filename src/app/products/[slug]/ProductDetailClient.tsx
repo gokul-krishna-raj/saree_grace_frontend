@@ -53,11 +53,7 @@ export function ProductDetailClient({
 
   useEffect(() => {
     trackViewItem(product);
-    trackViewContent({
-      contentId: product._id,
-      contentName: product.name,
-      value: product.type === "variant" ? product.startingPrice : (product.price ?? 0),
-    });
+    trackViewContent(product);
     recordRecentlyViewed({
       slug: product.slug,
       name: product.name,
