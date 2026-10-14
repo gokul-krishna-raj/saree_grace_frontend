@@ -61,8 +61,18 @@ interface RazorpayOptions {
   modal?: { ondismiss?: () => void };
 }
 
+interface RazorpayFailureResponse {
+  error: {
+    code?: string;
+    description?: string;
+    reason?: string;
+    metadata?: { order_id?: string; payment_id?: string };
+  };
+}
+
 interface RazorpayInstance {
   open: () => void;
+  on: (event: "payment.failed", callback: (response: RazorpayFailureResponse) => void) => void;
 }
 
 declare global {
@@ -194,6 +204,12 @@ export function useRazorpayCheckout() {
               router.push(`/checkout/failed/${order._id}`);
             },
           },
+        });
+        // A failed attempt leaves the modal open so the customer can retry with another
+        // method — just surface the reason here; closing the modal (ondismiss) is what
+        // routes to the failed-payment page.
+        razorpay.on("payment.failed", (response) => {
+          toast.error(response.error?.description || "Payment failed. Please try again.");
         });
         razorpay.open();
       } catch (error) {

@@ -21,6 +21,11 @@ jest.mock("@/components/analytics/MetaPixel", () => ({
   trackPurchase: (...args: unknown[]) => metaPurchaseMock(...args),
 }));
 
+const toastErrorMock = jest.fn();
+jest.mock("@/lib/toast", () => ({
+  toast: { error: (...args: unknown[]) => toastErrorMock(...args), info: jest.fn() },
+}));
+
 import { useRazorpayCheckout } from "./useRazorpayCheckout";
 
 const order = {
@@ -30,6 +35,7 @@ const order = {
 
 let capturedOptions: Record<string, unknown> | null = null;
 const razorpayOpenMock = jest.fn();
+const razorpayOnMock = jest.fn();
 
 describe("useRazorpayCheckout", () => {
   beforeEach(() => {
@@ -37,6 +43,7 @@ describe("useRazorpayCheckout", () => {
     createRazorpayOrderMock.mockReset();
     verifyPaymentMock.mockReset();
     razorpayOpenMock.mockReset();
+    razorpayOnMock.mockReset();
     gaPurchaseMock.mockReset();
     metaPurchaseMock.mockReset();
     localStorage.clear();
@@ -57,7 +64,7 @@ describe("useRazorpayCheckout", () => {
       .fn()
       .mockImplementation((options: Record<string, unknown>) => {
         capturedOptions = options;
-        return { open: razorpayOpenMock };
+        return { open: razorpayOpenMock, on: razorpayOnMock };
       }) as unknown as Window["Razorpay"];
   });
 
@@ -153,5 +160,23 @@ describe("useRazorpayCheckout", () => {
     expect(pushMock).toHaveBeenCalledWith("/checkout/failed/order1");
     expect(gaPurchaseMock).not.toHaveBeenCalled();
     expect(metaPurchaseMock).not.toHaveBeenCalled();
+  });
+
+  it("shows the failure reason on payment.failed without leaving the still-open modal", async () => {
+    const { result } = renderHook(() => useRazorpayCheckout());
+
+    await act(async () => {
+      await result.current.payForOrder(order);
+    });
+
+    expect(razorpayOnMock).toHaveBeenCalledWith("payment.failed", expect.any(Function));
+    const onFailed = razorpayOnMock.mock.calls[0][1] as (response: unknown) => void;
+    act(() => {
+      onFailed({ error: { description: "Card declined by bank" } });
+    });
+
+    expect(toastErrorMock).toHaveBeenCalledWith("Card declined by bank");
+    expect(verifyPaymentMock).not.toHaveBeenCalled();
+    expect(pushMock).not.toHaveBeenCalled();
   });
 });
