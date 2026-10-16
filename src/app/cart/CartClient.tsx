@@ -3,6 +3,7 @@
 import { Lock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { CartSummary } from "@/components/cart/CartSummary";
@@ -10,6 +11,7 @@ import { Button, buttonVariants } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonGroup } from "@/components/ui/Skeleton";
 import { useCart } from "@/hooks/useCart";
+import { trackViewCart } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { useAppSelector } from "@/store/hooks";
 
@@ -33,6 +35,15 @@ export function CartClient() {
   // to /login instead of /checkout, which would have correctly waited out the "checking" window.
   const authStatus = useAppSelector((state) => state.auth.status);
   const router = useRouter();
+
+  // Once per visit to the cart page, as soon as the cart has resolved with something in it — same
+  // ref guard as begin_checkout in CheckoutForm, so qty edits and Strict Mode don't re-fire it.
+  const hasTrackedViewCart = useRef(false);
+  useEffect(() => {
+    if (hasTrackedViewCart.current || isLoading || lines.length === 0) return;
+    hasTrackedViewCart.current = true;
+    trackViewCart(lines, itemsTotal);
+  }, [isLoading, lines, itemsTotal]);
 
   if (isLoading) {
     return (

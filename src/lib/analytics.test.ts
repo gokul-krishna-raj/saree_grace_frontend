@@ -1,10 +1,17 @@
 import type { Order, Product } from "@/types";
 
 jest.mock("@/lib/env", () => ({
-  env: { NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST123" },
+  env: { NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST123", NEXT_PUBLIC_GTM_ID: "GTM-TEST123" },
 }));
 
-import { trackAddToCart, trackBeginCheckout, trackPurchase, trackViewItem } from "./analytics";
+import {
+  trackAddPaymentInfo,
+  trackAddToCart,
+  trackBeginCheckout,
+  trackPurchase,
+  trackViewCart,
+  trackViewItem,
+} from "./analytics";
 
 const product: Product = {
   _id: "p1",
@@ -57,6 +64,7 @@ const order: Order = {
 describe("analytics", () => {
   beforeEach(() => {
     window.gtag = jest.fn();
+    window.dataLayer = [];
   });
 
   it("sends a view_item event with the product's price and id", () => {
@@ -134,8 +142,61 @@ describe("analytics", () => {
     );
   });
 
+  it("sends view_cart with every cart line", () => {
+    trackViewCart([{ productId: "p1", variantId: "v1", name: "A", price: 1000, qty: 2 }], 2000);
+    expect(window.gtag).toHaveBeenCalledWith(
+      "event",
+      "view_cart",
+      expect.objectContaining({
+        value: 2000,
+        currency: "INR",
+        items: [expect.objectContaining({ item_id: "v1", quantity: 2 })],
+      }),
+    );
+  });
+
+  it("sends add_payment_info for the order's items and total", () => {
+    trackAddPaymentInfo(order);
+    expect(window.gtag).toHaveBeenCalledWith(
+      "event",
+      "add_payment_info",
+      expect.objectContaining({
+        value: 1998,
+        currency: "INR",
+        items: [expect.objectContaining({ item_id: "p1", quantity: 1 })],
+      }),
+    );
+  });
+
+  it("mirrors each event to the GTM dataLayer, clearing the previous ecommerce object first", () => {
+    trackPurchase(order);
+    expect(window.dataLayer).toEqual([
+      { ecommerce: null },
+      {
+        event: "purchase",
+        ecommerce: expect.objectContaining({ transaction_id: "o1", value: 1998, currency: "INR" }),
+      },
+    ]);
+  });
+
+  it("never puts the shipping address or payment details in the event", () => {
+    trackPurchase({
+      ...order,
+      shippingAddress: { fullName: "Priya", phone: "9876543210" } as Order["shippingAddress"],
+      payment: { provider: "razorpay", razorpayPaymentId: "pay_1", razorpaySignature: "sig" },
+    });
+    const sent = JSON.stringify(window.dataLayer);
+    expect(sent).not.toMatch(/Priya|9876543210|pay_1|sig/);
+  });
+
   it("is a no-op when gtag never loaded (ad blocker)", () => {
     delete window.gtag;
     expect(() => trackViewItem(product)).not.toThrow();
+  });
+
+  it("still pushes to the dataLayer when gtag never loaded", () => {
+    delete window.gtag;
+    trackViewItem(product);
+    expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: "view_item" }));
   });
 });

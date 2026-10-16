@@ -14,8 +14,10 @@ jest.mock("@/store/api/paymentsApi", () => ({
 
 const gaPurchaseMock = jest.fn();
 const metaPurchaseMock = jest.fn();
+const addPaymentInfoMock = jest.fn();
 jest.mock("@/lib/analytics", () => ({
   trackPurchase: (...args: unknown[]) => gaPurchaseMock(...args),
+  trackAddPaymentInfo: (...args: unknown[]) => addPaymentInfoMock(...args),
 }));
 jest.mock("@/components/analytics/MetaPixel", () => ({
   trackPurchase: (...args: unknown[]) => metaPurchaseMock(...args),
@@ -89,6 +91,21 @@ describe("useRazorpayCheckout", () => {
       },
     });
     expect(razorpayOpenMock).toHaveBeenCalledTimes(1);
+    expect(addPaymentInfoMock).toHaveBeenCalledWith(order);
+  });
+
+  it("still opens the widget when add_payment_info tracking throws", async () => {
+    addPaymentInfoMock.mockImplementationOnce(() => {
+      throw new Error("tracking broke");
+    });
+    const { result } = renderHook(() => useRazorpayCheckout());
+
+    await act(async () => {
+      await result.current.payForOrder(order);
+    });
+
+    expect(razorpayOpenMock).toHaveBeenCalledTimes(1);
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it("verifies payment and redirects to the success page when Razorpay's handler fires", async () => {

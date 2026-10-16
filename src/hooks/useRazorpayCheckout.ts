@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { trackPurchase as trackMetaPurchase } from "@/components/analytics/MetaPixel";
-import { trackPurchase as trackGaPurchase } from "@/lib/analytics";
+import { trackAddPaymentInfo, trackPurchase as trackGaPurchase } from "@/lib/analytics";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { toast } from "@/lib/toast";
 import { claimPurchaseTracking } from "@/lib/trackingItem";
@@ -211,6 +211,11 @@ export function useRazorpayCheckout() {
         razorpay.on("payment.failed", (response) => {
           toast.error(response.error?.description || "Payment failed. Please try again.");
         });
+        try {
+          trackAddPaymentInfo(order);
+        } catch {
+          // Tracking is best-effort — it must never send a payable order to the failed page.
+        }
         razorpay.open();
       } catch (error) {
         setIsProcessing(false);
