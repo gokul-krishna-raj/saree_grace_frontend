@@ -98,6 +98,11 @@ function trackVerifiedPurchase(order: Order) {
   }
 }
 
+// "paying" = Razorpay's modal is open; "redirecting" = verified and navigating to the success
+// page — the stage is deliberately left there (the page unmounts) so the loader doesn't drop
+// for a beat and flash the now-empty checkout before the success page renders.
+export type PaymentStage = "idle" | "starting" | "paying" | "verifying" | "redirecting";
+
 // Shared by the checkout page (first payment attempt) and the failed-payment page (retry) —
 // retrying re-uses the SAME internal order rather than creating a new one, since the backend
 // clears the cart and decrements stock at order-creation time, not at payment time (see
@@ -107,37 +112,38 @@ export function useRazorpayCheckout() {
   const [createRazorpayOrder] = useCreateRazorpayOrderMutation();
   const [verifyPayment] = useVerifyPaymentMutation();
   const router = useRouter();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [stage, setStage] = useState<PaymentStage>("idle");
 
   const payForOrder = useCallback(
     async (order: Order) => {
-      setIsProcessing(true);
+      setStage("starting");
       try {
         const paymentOrder = await createRazorpayOrder({ orderId: order._id }).unwrap();
 
         // Handle development mock order
         if (paymentOrder.razorpayOrderId.startsWith("order_mock_")) {
           toast.info("Simulating payment in development mock mode...");
+          setStage("verifying");
           try {
             await verifyPayment({
               razorpayOrderId: paymentOrder.razorpayOrderId,
               razorpayPaymentId: `pay_mock_${Date.now()}`,
               razorpaySignature: "mock_signature",
             }).unwrap();
+            setStage("redirecting");
             router.push(`/checkout/success/${order._id}`);
             trackVerifiedPurchase(order);
           } catch (err) {
+            setStage("idle");
             toast.error(toErrorMessage(err, "We couldn't confirm your test payment."));
             router.push(`/checkout/failed/${order._id}`);
-          } finally {
-            setIsProcessing(false);
           }
           return;
         }
 
         if (typeof window === "undefined" || !window.Razorpay) {
           toast.error("Payment couldn't load. Please refresh and try again.");
-          setIsProcessing(false);
+          setStage("idle");
           router.push(`/checkout/failed/${order._id}`);
           return;
         }
@@ -181,6 +187,7 @@ export function useRazorpayCheckout() {
           handler: (response) => {
             // Real payment confirmation only ever comes from the backend's own signature
             // verification below — this callback firing is not treated as "paid" on its own.
+            setStage("verifying");
             void (async () => {
               try {
                 await verifyPayment({
@@ -188,19 +195,19 @@ export function useRazorpayCheckout() {
                   razorpayPaymentId: response.razorpay_payment_id,
                   razorpaySignature: response.razorpay_signature,
                 }).unwrap();
+                setStage("redirecting");
                 router.push(`/checkout/success/${order._id}`);
                 trackVerifiedPurchase(order);
               } catch (error) {
+                setStage("idle");
                 toast.error(toErrorMessage(error, "We couldn't confirm your payment."));
                 router.push(`/checkout/failed/${order._id}`);
-              } finally {
-                setIsProcessing(false);
               }
             })();
           },
           modal: {
             ondismiss: () => {
-              setIsProcessing(false);
+              setStage("idle");
               router.push(`/checkout/failed/${order._id}`);
             },
           },
@@ -216,9 +223,10 @@ export function useRazorpayCheckout() {
         } catch {
           // Tracking is best-effort — it must never send a payable order to the failed page.
         }
+        setStage("paying");
         razorpay.open();
       } catch (error) {
-        setIsProcessing(false);
+        setStage("idle");
         toast.error(toErrorMessage(error, "Payment initialization failed."));
         router.push(`/checkout/failed/${order._id}`);
       }
@@ -226,5 +234,5 @@ export function useRazorpayCheckout() {
     [createRazorpayOrder, verifyPayment, router],
   );
 
-  return { payForOrder, isProcessing };
+  return { payForOrder, stage, isProcessing: stage !== "idle" };
 }

@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 
 import { trackInitiateCheckout } from "@/components/analytics/MetaPixel";
 import { CartSummary } from "@/components/cart/CartSummary";
+import { PaymentProgressOverlay } from "@/components/checkout/PaymentProgressOverlay";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -27,7 +28,7 @@ import { useCreateOrderMutation } from "@/store/api/ordersApi";
 export function CheckoutForm() {
   const { lines, itemsTotal, isEmpty, isLoading: isCartLoading } = useCart();
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
-  const { payForOrder, isProcessing } = useRazorpayCheckout();
+  const { payForOrder, stage, isProcessing } = useRazorpayCheckout();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -57,21 +58,10 @@ export function CheckoutForm() {
     trackInitiateCheckout(lines, itemsTotal);
   }, [isCartLoading, lines, itemsTotal]);
 
+  // The cart is emptied server-side as soon as the order is created, so while payment is in
+  // flight render only the loader — never the "cart is empty" state underneath it.
   if (isProcessing) {
-    return (
-      <div
-        className="flex flex-col items-center gap-4 py-16 text-center"
-        role="status"
-        aria-live="polite"
-      >
-        <div className="border-maroon-200 border-t-maroon-700 h-12 w-12 animate-spin rounded-full border-4" />
-        <h2 className="font-heading text-maroon-900 text-xl">Confirming your payment...</h2>
-        <p className="text-maroon-600 max-w-sm text-sm">
-          Please do not refresh or close this page while we verify your transaction and prepare your
-          order.
-        </p>
-      </div>
-    );
+    return <PaymentProgressOverlay stage={stage} />;
   }
 
   if (isEmpty) {
@@ -108,6 +98,7 @@ export function CheckoutForm() {
   return (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
+      <PaymentProgressOverlay stage={isSubmitting ? "starting" : "idle"} />
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
         <section className="flex flex-col gap-4">
           <h2 className="font-heading text-maroon-900 text-lg">Shipping address</h2>

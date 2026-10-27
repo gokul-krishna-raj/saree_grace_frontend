@@ -27,7 +27,11 @@ jest.mock("@/store/api/ordersApi", () => ({
 let isProcessingMock = false;
 const payForOrderMock = jest.fn();
 jest.mock("@/hooks/useRazorpayCheckout", () => ({
-  useRazorpayCheckout: () => ({ payForOrder: payForOrderMock, isProcessing: isProcessingMock }),
+  useRazorpayCheckout: () => ({
+    payForOrder: payForOrderMock,
+    isProcessing: isProcessingMock,
+    stage: isProcessingMock ? "verifying" : "idle",
+  }),
 }));
 
 import { CheckoutForm } from "./CheckoutForm";
