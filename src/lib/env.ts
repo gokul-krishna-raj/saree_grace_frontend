@@ -25,6 +25,10 @@ export const env = {
   NEXT_PUBLIC_GOOGLE_CLIENT_ID: optional(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID),
   NEXT_PUBLIC_RAZORPAY_KEY_ID: optional(process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID),
   NEXT_PUBLIC_GA_MEASUREMENT_ID: optional(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID),
+  // Google Tag Manager container; <GoogleTagManager/> and the dataLayer pushes are no-ops while
+  // unset. GA4 itself stays on gtag.js (<GoogleAnalytics/>) — see GoogleTagManager.tsx before adding a GA4
+  // tag inside the container.
+  NEXT_PUBLIC_GTM_ID: optional(process.env.NEXT_PUBLIC_GTM_ID),
   // Meta Pixel; <MetaPixel/> and its track* helpers are no-ops while unset.
   NEXT_PUBLIC_META_PIXEL_ID: optional(process.env.NEXT_PUBLIC_META_PIXEL_ID),
   // Search Console / Meta Business domain-verification meta tags; each omitted while unset.

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import Script from "next/script";
 
+import { PaymentProgressOverlay } from "@/components/checkout/PaymentProgressOverlay";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -16,7 +17,7 @@ import { useGetOrderByIdQuery } from "@/store/api/ordersApi";
 function OrderDetailContent() {
   const { id } = useParams<{ id: string }>();
   const { data: order, isLoading, isError } = useGetOrderByIdQuery(id);
-  const { payForOrder, isProcessing } = useRazorpayCheckout();
+  const { payForOrder, stage, isProcessing } = useRazorpayCheckout();
 
   if (isLoading) {
     return (
@@ -35,6 +36,7 @@ function OrderDetailContent() {
 
   return (
     <div className="flex flex-col gap-6">
+      <PaymentProgressOverlay stage={stage} />
       <Link href="/account/orders" className="text-maroon-700 text-sm underline">
         ← Back to orders
       </Link>

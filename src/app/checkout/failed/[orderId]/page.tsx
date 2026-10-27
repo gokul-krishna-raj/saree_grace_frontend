@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import Script from "next/script";
 
+import { PaymentProgressOverlay } from "@/components/checkout/PaymentProgressOverlay";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -14,7 +15,7 @@ import { useGetOrderByIdQuery } from "@/store/api/ordersApi";
 function FailedContent() {
   const { orderId } = useParams<{ orderId: string }>();
   const { data: order, isLoading, isError } = useGetOrderByIdQuery(orderId);
-  const { payForOrder, isProcessing } = useRazorpayCheckout();
+  const { payForOrder, stage, isProcessing } = useRazorpayCheckout();
 
   if (isLoading) {
     return (
@@ -37,6 +38,7 @@ function FailedContent() {
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
+      <PaymentProgressOverlay stage={stage} />
       <XCircle className="h-16 w-16 text-red-600" aria-hidden="true" />
       <h1 className="font-heading text-maroon-900 text-2xl">Payment didn&apos;t go through</h1>
       <p className="text-maroon-600 max-w-sm text-sm">
