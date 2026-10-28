@@ -24,6 +24,19 @@ import { INDIAN_STATES } from "@/lib/indianStates";
 import { getShippingFeeForState } from "@/lib/shippingFee";
 import { type AddressFormValues, addressSchema } from "@/lib/validation/checkout";
 import { useCreateOrderMutation } from "@/store/api/ordersApi";
+import { useGetShippingQuoteQuery } from "@/store/api/shippingApi";
+
+const PINCODE_PATTERN = /^[1-9][0-9]{5}$/;
+
+// India Post's state names don't always match our dropdown exactly ("&" vs "and", casing), so
+// match loosely; an unmatched name just leaves the dropdown for the shopper to set.
+const normalizeStateName = (name: string) =>
+  name.toLowerCase().replace(/&/g, "and").replace(/\s+/g, " ").trim();
+function matchIndianState(name: string | undefined): string | undefined {
+  if (!name) return undefined;
+  const target = normalizeStateName(name);
+  return INDIAN_STATES.find((state) => normalizeStateName(state) === target);
+}
 
 export function CheckoutForm() {
   const { lines, itemsTotal, isEmpty, isLoading: isCartLoading } = useCart();
@@ -36,17 +49,56 @@ export function CheckoutForm() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
     defaultValues: { country: "India" },
   });
 
-  // Shipping is state-tiered (order.service.ts on the backend) and only known once the shopper
-  // picks a state here — until then the summary says so instead of guessing a number.
+  // Shipping is priced from the pincode (the backend looks up its state via India Post, and
+  // re-quotes when the order is created). The selected state is sent along so a border pincode
+  // spanning two states is priced by the one the shopper picked.
   const selectedState = watch("state");
-  const shippingFee = selectedState ? getShippingFeeForState(selectedState) : null;
+  const pincode = watch("postalCode")?.trim() ?? "";
+  const isPincodeComplete = PINCODE_PATTERN.test(pincode);
+  const {
+    data: quote,
+    error: quoteError,
+    isFetching: isQuoting,
+  } = useGetShippingQuoteQuery(
+    { pincode, state: selectedState || undefined },
+    { skip: !isPincodeComplete },
+  );
+  // A 400 means the pincode itself is wrong; anything else (network, server down) falls back to
+  // pricing by the selected state so checkout still works.
+  const pincodeError =
+    isPincodeComplete && quoteError && "status" in quoteError && quoteError.status === 400
+      ? getApiErrorMessage(quoteError)
+      : undefined;
+  const shippingFee =
+    !isPincodeComplete || isQuoting || pincodeError
+      ? null
+      : quote
+        ? quote.fee
+        : selectedState
+          ? getShippingFeeForState(selectedState)
+          : null;
   const total = itemsTotal + (shippingFee ?? 0);
+  const shippingPendingLabel = isQuoting
+    ? "Checking pincode..."
+    : pincodeError
+      ? "Check your pincode"
+      : "Enter your pincode";
+
+  // Fill the state in from the pincode, so the shopper doesn't have to and the address can't
+  // name a different state than the one being charged for.
+  const quotedState = isPincodeComplete && !isQuoting ? matchIndianState(quote?.state) : undefined;
+  useEffect(() => {
+    if (quotedState && quotedState !== selectedState) {
+      setValue("state", quotedState, { shouldValidate: true, shouldDirty: true });
+    }
+  }, [quotedState, selectedState, setValue]);
 
   // Once per visit to checkout, as soon as the cart has resolved with something in it. The ref
   // (not state) keeps Strict Mode's double-invoked effect and later re-renders from re-firing.
@@ -153,10 +205,12 @@ export function CheckoutForm() {
             </Select>
           </div>
           <Input
-            label="Postal code"
+            label="Pincode"
             inputMode="numeric"
             autoComplete="postal-code"
-            error={errors.postalCode?.message}
+            maxLength={6}
+            error={errors.postalCode?.message ?? pincodeError}
+            hint={quote && !isQuoting ? `Delivering to ${quote.state}` : undefined}
             {...register("postalCode")}
           />
         </section>
@@ -187,7 +241,7 @@ export function CheckoutForm() {
             itemsTotal={itemsTotal}
             shippingFee={shippingFee}
             total={total}
-            shippingPendingLabel="Select your state"
+            shippingPendingLabel={shippingPendingLabel}
           />
         </section>
 

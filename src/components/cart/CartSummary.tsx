@@ -1,7 +1,7 @@
 import { formatPrice } from "@/lib/formatPrice";
 
-// Shipping depends on the delivery state (see lib/shippingFee.ts, mirroring the backend), so the
-// cart shows the subtotal and defers shipping to checkout, where the address is known.
+// Shipping depends on the delivery pincode (priced by the backend's shipping quote), so the cart
+// shows the subtotal and defers shipping to checkout, where the address is known.
 export function CartSummary({
   itemsTotal,
   shippingFee,

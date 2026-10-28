@@ -34,6 +34,31 @@ jest.mock("@/hooks/useRazorpayCheckout", () => ({
   }),
 }));
 
+// Stands in for the backend's pincode -> state lookup. Unknown pincodes come back as the
+// backend's 400; a test sets quoteOverride to simulate the quote being unreachable.
+const QUOTES: Record<string, { state: string; fee: number }> = {
+  "600001": { state: "Tamil Nadu", fee: 40 },
+  "560001": { state: "Karnataka", fee: 60 },
+  "110001": { state: "Delhi", fee: 130 },
+};
+let quoteOverride: Record<string, unknown> | null = null;
+jest.mock("@/store/api/shippingApi", () => ({
+  useGetShippingQuoteQuery: (args: { pincode: string }, options: { skip: boolean }) => {
+    if (options.skip) return { isFetching: false };
+    if (quoteOverride) return quoteOverride;
+    const quote = QUOTES[args.pincode];
+    return quote
+      ? { data: { pincode: args.pincode, ...quote, source: "pincode" }, isFetching: false }
+      : {
+          error: {
+            status: 400,
+            data: { success: false, error: { message: "This pincode was not found." } },
+          },
+          isFetching: false,
+        };
+  },
+}));
+
 import { CheckoutForm } from "./CheckoutForm";
 
 async function fillValidAddress() {
@@ -42,7 +67,7 @@ async function fillValidAddress() {
   await userEvent.type(screen.getByLabelText("Address line 1"), "123 Test Street");
   await userEvent.type(screen.getByLabelText("City"), "Chennai");
   await userEvent.selectOptions(screen.getByLabelText("State"), "Tamil Nadu");
-  await userEvent.type(screen.getByLabelText("Postal code"), "600001");
+  await userEvent.type(screen.getByLabelText("Pincode"), "600001");
 }
 
 describe("CheckoutForm", () => {
@@ -51,6 +76,7 @@ describe("CheckoutForm", () => {
     payForOrderMock.mockReset();
     cartState.isEmpty = false;
     isProcessingMock = false;
+    quoteOverride = null;
   });
 
   it("shows confirming payment state when payment is processing even if cart is empty", () => {
@@ -121,6 +147,48 @@ describe("CheckoutForm", () => {
     await act(async () => {
       resolveOrder({ _id: "order1", orderNumber: "SG-1" });
       await Promise.resolve();
+    });
+  });
+
+  describe("pincode-based shipping", () => {
+    it("asks for a pincode before showing shipping", () => {
+      render(<CheckoutForm />);
+      expect(screen.getByText("Enter your pincode")).toBeInTheDocument();
+    });
+
+    it("fills the state and shows the fee for the pincode", async () => {
+      render(<CheckoutForm />);
+      await userEvent.type(screen.getByLabelText("Pincode"), "560001");
+
+      expect(screen.getByLabelText("State")).toHaveValue("Karnataka");
+      expect(screen.getByText("Delivering to Karnataka")).toBeInTheDocument();
+      expect(screen.getByText("₹60")).toBeInTheDocument();
+    });
+
+    it("prices by the pincode even if a different state was picked first", async () => {
+      render(<CheckoutForm />);
+      await userEvent.selectOptions(screen.getByLabelText("State"), "Tamil Nadu");
+      await userEvent.type(screen.getByLabelText("Pincode"), "110001");
+
+      expect(screen.getByLabelText("State")).toHaveValue("Delhi");
+      expect(screen.getByText("₹130")).toBeInTheDocument();
+    });
+
+    it("shows an error and no fee for an unknown pincode", async () => {
+      render(<CheckoutForm />);
+      await userEvent.type(screen.getByLabelText("Pincode"), "999999");
+
+      expect(screen.getByText("This pincode was not found.")).toBeInTheDocument();
+      expect(screen.getByText("Check your pincode")).toBeInTheDocument();
+    });
+
+    it("falls back to the selected state when the quote can't be fetched", async () => {
+      quoteOverride = { error: { status: "FETCH_ERROR", error: "offline" }, isFetching: false };
+      render(<CheckoutForm />);
+      await userEvent.selectOptions(screen.getByLabelText("State"), "Kerala");
+      await userEvent.type(screen.getByLabelText("Pincode"), "682001");
+
+      expect(screen.getByText("₹60")).toBeInTheDocument();
     });
   });
 });

@@ -13,7 +13,10 @@ export const addressSchema = z.object({
   line2: z.string().trim().max(200).optional(),
   city: z.string().trim().min(2, "Enter a city").max(100),
   state: z.string().trim().min(2, "Enter a state").max(100),
-  postalCode: z.string().trim().min(3, "Enter a valid postal code").max(15),
+  postalCode: z
+    .string()
+    .trim()
+    .regex(/^[1-9][0-9]{5}$/, "Enter a valid 6-digit pincode"),
   country: z.string().min(1),
 });
 export type AddressFormValues = z.infer<typeof addressSchema>;
