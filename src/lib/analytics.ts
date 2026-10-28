@@ -65,6 +65,11 @@ function toGaItem(product: Product, variant?: ProductVariant, quantity?: number)
   };
 }
 
+// Clicks on a WhatsApp updates-group invite; `location` says which one (popup/footer/home).
+export function trackJoinWhatsAppGroup(location: "popup" | "footer" | "home") {
+  trackEvent("join_whatsapp_group", { location });
+}
+
 export function trackViewItem(product: Product) {
   trackEvent("view_item", {
     currency: "INR",

@@ -17,6 +17,7 @@ import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { WhatsAppGroupInvite } from "@/components/layout/WhatsAppGroupInvite";
 import { getCategories } from "@/lib/catalog";
 import { env } from "@/lib/env";
 import { StoreProvider } from "@/store/StoreProvider";
@@ -118,6 +119,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <Footer categories={categories} />
           <CartDrawer />
           <WhatsAppButton />
+          <WhatsAppGroupInvite />
           <Toaster
             position="top-center"
             toastOptions={{

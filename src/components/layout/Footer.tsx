@@ -8,6 +8,7 @@ import {
   WhatsAppIcon,
   YoutubeIcon,
 } from "@/components/layout/SocialIcons";
+import { JoinWhatsAppGroupLink } from "@/components/layout/WhatsAppGroupInvite";
 import { env } from "@/lib/env";
 import type { Category } from "@/types";
 
@@ -70,6 +71,13 @@ export function Footer({ categories = [] }: { categories?: Category[] }) {
               ))}
             </ul>
           ) : null}
+          <JoinWhatsAppGroupLink
+            location="footer"
+            className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#25D366]/60 px-4 py-2 text-sm text-white/90 transition-colors hover:border-[#25D366] hover:bg-[#25D366]/10 hover:text-white"
+          >
+            <WhatsAppIcon className="h-4 w-4 text-[#25D366]" aria-hidden="true" />
+            Join our WhatsApp group for new arrivals
+          </JoinWhatsAppGroupLink>
         </div>
 
         <div className="md:col-span-4 lg:col-span-2">

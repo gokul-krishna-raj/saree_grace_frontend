@@ -36,6 +36,11 @@ export const env = {
   NEXT_PUBLIC_META_DOMAIN_VERIFICATION: optional(process.env.NEXT_PUBLIC_META_DOMAIN_VERIFICATION),
   // Footer/home WhatsApp contact link; also the footer's "Call us" number. Hidden when unset.
   NEXT_PUBLIC_WHATSAPP_NUMBER: optional(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER),
+  // WhatsApp updates-group invite link (popup, footer, home). Set it to "" to hide every invite.
+  NEXT_PUBLIC_WHATSAPP_GROUP_URL: optional(
+    process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL,
+    "https://chat.whatsapp.com/B9mkNEsqoTKD16MZTZspJ1",
+  ),
   // Single source of truth for the support address (footer, contact page, signup fallback).
   NEXT_PUBLIC_CONTACT_EMAIL: optional(
     process.env.NEXT_PUBLIC_CONTACT_EMAIL,

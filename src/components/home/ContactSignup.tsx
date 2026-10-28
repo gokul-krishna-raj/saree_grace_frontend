@@ -1,5 +1,7 @@
 import { MessageCircle } from "lucide-react";
 
+import { WhatsAppIcon } from "@/components/layout/SocialIcons";
+import { JoinWhatsAppGroupLink } from "@/components/layout/WhatsAppGroupInvite";
 import { buttonVariants } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { env } from "@/lib/env";
@@ -26,15 +28,27 @@ export function ContactSignup() {
           Tell us what you&apos;re looking for — colour, fabric, budget — and we&apos;ll help you
           choose. We&apos;re also the first to share new handloom arrivals.
         </p>
-        <a
-          href={href}
-          target={whatsappNumber ? "_blank" : undefined}
-          rel={whatsappNumber ? "noopener noreferrer" : undefined}
-          className={cn(buttonVariants({ variant: "light", size: "lg" }), "mt-8")}
-        >
-          <MessageCircle aria-hidden="true" />
-          {label}
-        </a>
+        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
+          <a
+            href={href}
+            target={whatsappNumber ? "_blank" : undefined}
+            rel={whatsappNumber ? "noopener noreferrer" : undefined}
+            className={cn(buttonVariants({ variant: "light", size: "lg" }))}
+          >
+            <MessageCircle aria-hidden="true" />
+            {label}
+          </a>
+          <JoinWhatsAppGroupLink
+            location="home"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "lg" }),
+              "border-white/40 bg-transparent text-white hover:border-white hover:bg-white/10 hover:text-white",
+            )}
+          >
+            <WhatsAppIcon aria-hidden="true" />
+            Join our WhatsApp group
+          </JoinWhatsAppGroupLink>
+        </div>
       </div>
     </section>
   );
